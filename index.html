@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f1117">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -370,12 +370,10 @@ input[type=number] { font-family: 'DM Mono', monospace; font-size: 1.05rem; }
           </div>
         </div>
         <button class="btn btn-full btn-blue" onclick="driveSignIn()">🔗 Google Drive সংযোগ করুন</button>
-        <div style="margin-top:12px;padding:12px;background:var(--surface);border-radius:10px;font-size:0.78rem;color:var(--muted);line-height:1.7">
+        <div id="clientIdWarn" class="hidden" style="margin-top:12px;padding:12px;background:var(--surface);border-radius:10px;font-size:0.78rem;color:var(--muted);line-height:1.7">
           ⚠️ <strong style="color:var(--text)">Client ID দরকার!</strong><br>
-          index.html ফাইলের উপরে<br>
-          <code style="color:var(--gold);font-family:'DM Mono',monospace">YOUR_CLIENT_ID_HERE</code><br>
-          জায়গায় আপনার Google Client ID বসান।<br>
-          নিচে README.md দেখুন।
+          index.html ফাইলের উপরে <code style="color:var(--gold);font-family:'DM Mono',monospace">google-client-id</code><br>
+          meta ট্যাগে আপনার Google Client ID বসান।
         </div>
       </div>
 
@@ -422,7 +420,41 @@ const FILE_NAME = 'hisab-khata-data.json';
 // ══════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════
-let persons = JSON.parse(localStorage.getItem('hk_persons') || '{}');
+const round2 = n => Math.round(n * 100) / 100;
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const BAD_NAMES = ['__proto__', 'constructor', 'prototype'];
+
+// ডেটা যাচাই করে পরিষ্কার করে — নষ্ট/অচেনা ডেটা বাদ যায়, total নতুন করে হিসাব হয়
+function normalizePersons(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const out = {};
+  for (const name of Object.keys(raw)) {
+    if (BAD_NAMES.includes(name)) continue;
+    const p = raw[name];
+    const txns = (p && Array.isArray(p.txns) ? p.txns : [])
+      .filter(t => t && (t.type === 'add' || t.type === 'sub') && Number.isFinite(+t.amount) && +t.amount > 0)
+      .map((t, i) => ({
+        type: t.type,
+        amount: +t.amount,
+        note: String(t.note ?? ''),
+        person: name,
+        time: String(t.time ?? ''),
+        id: Number.isFinite(+t.id) ? +t.id : i,
+      }));
+    out[name] = {
+      txns,
+      total: round2(txns.reduce((s, t) => s + (t.type === 'add' ? t.amount : -t.amount), 0)),
+    };
+  }
+  return out;
+}
+
+function loadPersons() {
+  try { return normalizePersons(JSON.parse(localStorage.getItem('hk_persons') || '{}')) || {}; }
+  catch (e) { return {}; }
+}
+
+let persons = loadPersons();
 let sel = null;
 let txType = 'add';
 let filt = 'all';
@@ -430,7 +462,10 @@ let activeTab = 'names';
 let driveToken = null;
 let driveFileId = null;
 
-function save() { localStorage.setItem('hk_persons', JSON.stringify(persons)); }
+function save() {
+  try { localStorage.setItem('hk_persons', JSON.stringify(persons)); }
+  catch (e) { toast('⚠️ ফোনে সেভ করা যায়নি', 3000); }
+}
 
 // ══════════════════════════════════════
 //  FORMAT
@@ -440,7 +475,10 @@ function bn(n) {
     .replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
 }
 function fmt(n) { return '৳ ' + bn(n); }
-function esc(s) { return s.replace(/'/g,"\\'"); }
+// HTML-এ বসানোর আগে বিশেষ চিহ্ন নিরাপদ করা
+function h(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function nowStr() {
   const d = new Date();
   return d.toLocaleDateString('bn-BD') + ' ' + d.toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'});
@@ -468,7 +506,8 @@ function addPerson() {
   const inp = document.getElementById('nameInp');
   const name = inp.value.trim();
   if (!name) return;
-  if (!persons[name]) persons[name] = { total:0, txns:[] };
+  if (BAD_NAMES.includes(name)) { toast('⚠️ এই নামটি ব্যবহার করা যাবে না'); return; }
+  if (!own(persons, name)) persons[name] = { total:0, txns:[] };
   inp.value = '';
   save();
   selectPerson(name);
@@ -496,10 +535,10 @@ function renderChips() {
   el.innerHTML = keys.map(n => {
     const t = persons[n].total;
     const col = t>0?'color:var(--green)':t<0?'color:var(--red)':'';
-    return `<div class="chip ${sel===n?'active':''}" onclick="selectPerson('${esc(n)}')">
-      <span>${n}</span>
-      <span class="chip-amt" style="${col}">${fmt(t)}</span>
-      <span class="chip-x" onclick="event.stopPropagation();delPerson('${esc(n)}')">✕</span>
+    return `<div class="chip ${sel===n?'active':''}" data-name="${h(n)}" onclick="selectPerson(this.dataset.name)">
+      <span>${h(n)}</span>
+      <span class="chip-amt" style="${col}">${t<0?'- ':''}${fmt(t)}</span>
+      <span class="chip-x" onclick="event.stopPropagation();delPerson(this.parentElement.dataset.name)">✕</span>
     </div>`;
   }).join('');
 }
@@ -509,13 +548,13 @@ function renderChips() {
 // ══════════════════════════════════════
 function renderTx() {
   const el = document.getElementById('txCard');
-  if (!sel || !persons[sel]) { el.innerHTML='<div class="no-sel">👈 আগে "নাম" ট্যাব থেকে একটি নাম বেছে নিন</div>'; return; }
+  if (!sel || !own(persons, sel)) { el.innerHTML='<div class="no-sel">👈 আগে "নাম" ট্যাব থেকে একটি নাম বেছে নিন</div>'; return; }
   const t = persons[sel].total;
   const col = t>0?'var(--green)':t<0?'var(--red)':'var(--muted)';
   el.innerHTML = `
     <div class="sel-info">
-      <span class="sel-name">📋 ${sel}</span>
-      <span class="sel-bal" style="color:${col}">${fmt(t)}</span>
+      <span class="sel-name">📋 ${h(sel)}</span>
+      <span class="sel-bal" style="color:${col}">${t<0?'- ':''}${fmt(t)}</span>
     </div>
     <div class="type-toggle">
       <button class="type-btn add ${txType==='add'?'on':''}" onclick="setType('add')">＋ যোগ করুন</button>
@@ -539,10 +578,11 @@ function addTx() {
   const aEl = document.getElementById('amtInp');
   const nEl = document.getElementById('noteInp');
   const amt = parseFloat(aEl.value);
-  if (!amt || amt<=0) { aEl.style.borderColor='var(--red)'; setTimeout(()=>aEl.style.borderColor='',800); return; }
+  if (!sel || !own(persons, sel)) return;
+  if (!Number.isFinite(amt) || amt<=0) { aEl.style.borderColor='var(--red)'; setTimeout(()=>aEl.style.borderColor='',800); return; }
   const note = nEl.value.trim() || (txType==='add'?'যোগ':'বিয়োগ');
   persons[sel].txns.unshift({ type:txType, amount:amt, note, person:sel, time:nowStr(), id:Date.now() });
-  persons[sel].total += txType==='add'?amt:-amt;
+  persons[sel].total = round2(persons[sel].total + (txType==='add'?amt:-amt));
   aEl.value=''; nEl.value='';
   save(); updateBal(); renderChips(); renderTx();
   toast(txType==='add'?'✅ যোগ হয়েছে':'🔻 বিয়োগ হয়েছে');
@@ -569,21 +609,22 @@ function renderHistory() {
     <div class="tx-item">
       <div class="tx-dot ${tx.type}"></div>
       <div class="tx-body">
-        <div class="tx-who">${tx.person}</div>
-        <div class="tx-note">${tx.note}</div>
-        <div class="tx-time">${tx.time}</div>
+        <div class="tx-who">${h(tx.person)}</div>
+        <div class="tx-note">${h(tx.note)}</div>
+        <div class="tx-time">${h(tx.time)}</div>
       </div>
       <div class="tx-amt ${tx.type}">${tx.type==='add'?'+':'-'} ${fmt(tx.amount)}</div>
-      <button class="tx-del" onclick="delTx('${esc(tx.person)}',${tx.id})">✕</button>
+      <button class="tx-del" data-person="${h(tx.person)}" data-id="${tx.id}" onclick="delTx(this.dataset.person, +this.dataset.id)">✕</button>
     </div>`).join('');
 }
 
 function delTx(person, id) {
+  if (!own(persons, person)) return;
   const p = persons[person];
   const i = p.txns.findIndex(t=>t.id===id);
   if (i===-1) return;
   const tx = p.txns[i];
-  p.total -= tx.type==='add'?tx.amount:-tx.amount;
+  p.total = round2(p.total - (tx.type==='add'?tx.amount:-tx.amount));
   p.txns.splice(i,1);
   save(); updateBal(); renderChips(); renderTx(); renderHistory();
 }
@@ -600,7 +641,7 @@ function clearAll() {
 function updateBal() {
   let tin=0, tout=0, cnt=0;
   for (const n in persons) persons[n].txns.forEach(t=>{ if(t.type==='add')tin+=t.amount; else tout+=t.amount; cnt++; });
-  const net = tin-tout;
+  const net = round2(tin-tout);
   const el = document.getElementById('balAmt');
   el.textContent = (net<0?'- ':'')+fmt(net);
   el.className = 'bal-amount '+(net>0?'pos':net<0?'neg':'zero');
@@ -622,31 +663,138 @@ function toast(msg, dur=2000) {
 // ══════════════════════════════════════
 //  GOOGLE DRIVE
 // ══════════════════════════════════════
+const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
+const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+const clientIdMissing = !CLIENT_ID || CLIENT_ID.startsWith('YOUR_CLIENT_ID');
+
+let tokenClient = null;
+let tokenExpiry = 0;
+let pendingToken = null;
+let fileLookup = null;
+let driveBusy = false;
+
+class DriveError extends Error {
+  constructor(code, status) { super(code); this.code = code; this.status = status; }
+}
+
+function gsiReady() {
+  return !!(window.google && google.accounts && google.accounts.oauth2);
+}
+
+function getTokenClient() {
+  if (!gsiReady()) return null;
+  if (!tokenClient) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: resp => {
+        const p = pendingToken; pendingToken = null;
+        if (!p) return;
+        if (resp.error) { p.reject(new DriveError('auth')); return; }
+        driveToken = resp.access_token;
+        // মেয়াদ শেষ হওয়ার ১ মিনিট আগেই নতুন টোকেন নেওয়া হবে
+        tokenExpiry = Date.now() + (Number(resp.expires_in) || 3600) * 1000 - 60000;
+        p.resolve(driveToken);
+      },
+      error_callback: () => {
+        const p = pendingToken; pendingToken = null;
+        if (p) p.reject(new DriveError('auth'));
+      }
+    });
+  }
+  return tokenClient;
+}
+
+function requestToken(prompt) {
+  const c = getTokenClient();
+  if (!c) return Promise.reject(new DriveError('gsi'));
+  if (pendingToken) pendingToken.reject(new DriveError('auth'));
+  return new Promise((resolve, reject) => {
+    pendingToken = { resolve, reject };
+    c.requestAccessToken(prompt === undefined ? {} : { prompt });
+  });
+}
+
+// টোকেনের মেয়াদ শেষ হলে নিজে থেকেই নতুন টোকেন নেয়
+function ensureToken() {
+  if (driveToken && Date.now() < tokenExpiry) return Promise.resolve(driveToken);
+  return requestToken('');
+}
+
+async function driveFetch(url, opts = {}) {
+  const token = await ensureToken();
+  let res;
+  try {
+    res = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + token } });
+  } catch (e) {
+    throw new DriveError('network');
+  }
+  if (res.status === 401) { tokenExpiry = 0; throw new DriveError('auth', 401); }
+  if (!res.ok) throw new DriveError('http', res.status);
+  return res;
+}
+
+// Drive-এ ফাইল খোঁজে; একসাথে একাধিকবার ডাকলেও একটাই রিকোয়েস্ট যায়
+function findFile() {
+  if (driveFileId) return Promise.resolve(driveFileId);
+  if (!fileLookup) {
+    const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+    fileLookup = driveFetch(`${DRIVE_API}?spaces=appDataFolder&fields=files(id)&q=${q}`)
+      .then(r => r.json())
+      .then(d => (driveFileId = d.files && d.files.length ? d.files[0].id : null))
+      .finally(() => { fileLookup = null; });
+  }
+  return fileLookup;
+}
+
+function driveErrMsg(e) {
+  const code = e && e.code;
+  if (code === 'gsi') return '⏳ Google লোড হচ্ছে, একটু পরে আবার চেষ্টা করুন';
+  if (code === 'auth') return '🔑 Google অনুমতি পাওয়া যায়নি — আবার চেষ্টা করুন';
+  if (code === 'network') return '📶 ইন্টারনেট সংযোগ নেই';
+  if (code === 'bad-data') return '❌ Drive-এর ডেটা পড়া যায়নি';
+  return '❌ Drive-এ সমস্যা হয়েছে' + (e && e.status ? ` (${e.status})` : '');
+}
+
+function setDriveSyncing(label) {
+  document.getElementById('driveBtn').className = 'drive-btn syncing';
+  document.getElementById('driveBtnTxt').textContent = label;
+}
+
+function syncTimeStr() {
+  return new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
+}
+
 function driveAction() {
   if (driveToken) tab('drive'); else driveSignIn();
 }
 
-function driveSignIn() {
-  if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-    toast('⚠️ আগে Client ID বসান!', 3000); tab('drive'); return;
+async function driveSignIn() {
+  if (clientIdMissing) { toast('⚠️ আগে Client ID বসান!', 3000); tab('drive'); return; }
+  if (!gsiReady()) { toast(driveErrMsg({ code: 'gsi' }), 2500); return; }
+  if (driveBusy) return;
+  driveBusy = true;
+  try {
+    await requestToken();
+    driveFileId = null;
+    updateDriveUI(true);
+    toast('✅ Google Drive সংযুক্ত!');
+    document.getElementById('driveUser').textContent = '✅ সংযুক্ত — ফাইল খোঁজা হচ্ছে...';
+    const id = await findFile();
+    document.getElementById('driveUser').textContent =
+      id ? '✅ সংযুক্ত — ফাইল পাওয়া গেছে' : '✅ সংযুক্ত — প্রথম আপলোডে ফাইল তৈরি হবে';
+  } catch (e) {
+    if (driveToken) document.getElementById('driveUser').textContent = '✅ সংযুক্ত';
+    toast(driveErrMsg(e), 3000);
+  } finally {
+    driveBusy = false;
+    updateDriveUI(!!driveToken);
   }
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (resp) => {
-      if (resp.error) { toast('❌ সংযোগ ব্যর্থ'); return; }
-      driveToken = resp.access_token;
-      updateDriveUI(true);
-      toast('✅ Google Drive সংযুক্ত!');
-      findOrCreateFile();
-    }
-  });
-  client.requestAccessToken();
 }
 
 function driveSignOut() {
-  google.accounts.oauth2.revoke(driveToken, ()=>{});
-  driveToken = null; driveFileId = null;
+  if (driveToken && gsiReady()) google.accounts.oauth2.revoke(driveToken, () => {});
+  driveToken = null; driveFileId = null; tokenExpiry = 0;
   updateDriveUI(false);
   toast('সংযোগ বিচ্ছিন্ন হয়েছে');
 }
@@ -654,84 +802,79 @@ function driveSignOut() {
 function updateDriveUI(connected) {
   const btn = document.getElementById('driveBtn');
   const txt = document.getElementById('driveBtnTxt');
-  btn.className = 'drive-btn' + (connected?' connected':'');
+  btn.className = 'drive-btn' + (connected ? ' connected' : '');
   txt.textContent = connected ? 'Drive সংযুক্ত' : 'Drive সংযোগ';
   document.getElementById('driveNotConn').classList.toggle('hidden', connected);
   document.getElementById('driveConn').classList.toggle('hidden', !connected);
 }
 
-async function findOrCreateFile() {
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'`,
-    { headers: { Authorization: 'Bearer '+driveToken } }
-  );
-  const data = await res.json();
-  if (data.files && data.files.length > 0) {
-    driveFileId = data.files[0].id;
-    document.getElementById('driveUser').textContent = '✅ সংযুক্ত — ফাইল পাওয়া গেছে';
-  } else {
-    document.getElementById('driveUser').textContent = '✅ সংযুক্ত — নতুন ফাইল তৈরি হবে';
-  }
-}
-
 async function driveUpload() {
   if (!driveToken) { driveSignIn(); return; }
-  const btn = document.getElementById('driveBtn');
-  btn.className = 'drive-btn syncing';
-  document.getElementById('driveBtnTxt').textContent = 'আপলোড হচ্ছে...';
-
-  const body = JSON.stringify({ persons, exportTime: new Date().toISOString() });
-  let url, method;
-
-  if (driveFileId) {
-    url = `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`;
-    method = 'PATCH';
-  } else {
-    // Create with metadata
-    const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: { Authorization:'Bearer '+driveToken, 'Content-Type':'application/json' },
-      body: JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] })
-    });
-    const mData = await meta.json();
-    driveFileId = mData.id;
-    url = `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`;
-    method = 'PATCH';
+  if (driveBusy) return;
+  driveBusy = true;
+  setDriveSyncing('আপলোড হচ্ছে...');
+  try {
+    // ensureToken আগে ডাকা হচ্ছে যাতে দরকার হলে পপআপ ক্লিকের সাথেই খোলে
+    await ensureToken();
+    let id = await findFile();
+    if (!id) {
+      const r = await driveFetch(DRIVE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] })
+      });
+      id = driveFileId = (await r.json()).id;
+    }
+    try {
+      await driveFetch(`${DRIVE_UPLOAD}/${id}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ persons, exportTime: new Date().toISOString() })
+      });
+    } catch (e) {
+      if (e.status === 404) driveFileId = null; // ফাইল মুছে গেলে পরের বার নতুন তৈরি হবে
+      throw e;
+    }
+    document.getElementById('driveLastSync').textContent = 'শেষ আপলোড: ' + syncTimeStr();
+    document.getElementById('driveUser').textContent = '✅ সংযুক্ত — ফাইল পাওয়া গেছে';
+    toast('✅ Drive-এ আপলোড হয়েছে!');
+  } catch (e) {
+    toast(driveErrMsg(e), 3000);
+  } finally {
+    driveBusy = false;
+    updateDriveUI(!!driveToken);
   }
-
-  await fetch(url, {
-    method,
-    headers: { Authorization:'Bearer '+driveToken, 'Content-Type':'application/json' },
-    body
-  });
-
-  const syncTime = new Date().toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('driveLastSync').textContent = 'শেষ আপলোড: '+syncTime;
-  updateDriveUI(true);
-  toast('✅ Drive-এ আপলোড হয়েছে!');
 }
 
 async function driveDownload() {
   if (!driveToken) { driveSignIn(); return; }
-  if (!driveFileId) { toast('⚠️ Drive-এ কোনো ডেটা নেই', 2500); return; }
-  document.getElementById('driveBtnTxt').textContent = 'লোড হচ্ছে...';
-
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
-    { headers: { Authorization:'Bearer '+driveToken } }
-  );
-  const data = await res.json();
-  if (data.persons) {
-    if (!confirm('Drive-এর ডেটা দিয়ে বর্তমান ডেটা রিপ্লেস হবে। নিশ্চিত?')) { updateDriveUI(true); return; }
-    persons = data.persons;
+  if (driveBusy) return;
+  driveBusy = true;
+  setDriveSyncing('লোড হচ্ছে...');
+  try {
+    await ensureToken();
+    const id = await findFile();
+    if (!id) { toast('⚠️ Drive-এ কোনো ডেটা নেই', 2500); return; }
+    let data;
+    try {
+      data = await (await driveFetch(`${DRIVE_API}/${id}?alt=media`)).json();
+    } catch (e) {
+      if (e.status === 404) driveFileId = null;
+      throw e.code ? e : new DriveError('bad-data');
+    }
+    const clean = normalizePersons(data && data.persons);
+    if (!clean) throw new DriveError('bad-data');
+    if (!confirm('Drive-এর ডেটা দিয়ে বর্তমান ডেটা রিপ্লেস হবে। নিশ্চিত?')) return;
+    persons = clean;
+    if (sel && !own(persons, sel)) sel = null;
     save(); updateBal(); renderChips(); renderTx(); renderHistory();
-    const syncTime = new Date().toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('driveLastSync').textContent = 'শেষ ডাউনলোড: '+syncTime;
-    updateDriveUI(true);
+    document.getElementById('driveLastSync').textContent = 'শেষ ডাউনলোড: ' + syncTimeStr();
     toast('✅ Drive থেকে লোড হয়েছে!');
-  } else {
-    updateDriveUI(true);
-    toast('❌ ডেটা পড়া যায়নি');
+  } catch (e) {
+    toast(driveErrMsg(e), 3000);
+  } finally {
+    driveBusy = false;
+    updateDriveUI(!!driveToken);
   }
 }
 
@@ -745,6 +888,7 @@ if ('serviceWorker' in navigator) {
 // ══════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════
+document.getElementById('clientIdWarn').classList.toggle('hidden', !clientIdMissing);
 renderChips();
 updateBal();
 </script>
