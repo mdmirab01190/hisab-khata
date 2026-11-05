@@ -1,663 +1,1446 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="bn" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f1117">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f19">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>হিসাব খাতা</title>
 <link rel="manifest" href="manifest.json">
-<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- ★ আপনার Google Client ID এখানে বসান ★ -->
 <meta name="google-client-id" content="135120709761-v0sok099fn2ncl28j8v1jhvsumjq3t5a.apps.googleusercontent.com">
 
 <style>
-:root {
-  --bg: #0f1117;
-  --surface: #161b28;
-  --card: #1c2235;
-  --border: #262f47;
+/* ═════════ THEME ═════════ */
+:root, [data-theme="dark"] {
+  --bg: #0b0f19;
+  --surface: #111827;
+  --card: #161e2e;
+  --card2: #1d2739;
+  --border: #263247;
+  --text: #e8edf5;
+  --muted: #8b98ae;
+  --dim: #56637a;
   --green: #22c55e;
+  --green-bg: rgba(34,197,94,.13);
   --red: #f43f5e;
+  --red-bg: rgba(244,63,94,.13);
   --blue: #60a5fa;
+  --blue-bg: rgba(96,165,250,.13);
+  --btn: #3b82f6;
   --gold: #f59e0b;
-  --text: #e8eaf0;
-  --muted: #6b7590;
-  --dim: #3d4560;
+  --gold-bg: rgba(245,158,11,.13);
+  --hero: linear-gradient(135deg, #1e3a8a 0%, #312e81 55%, #4c1d95 100%);
+  --shadow: 0 8px 30px rgba(0,0,0,.35);
+  --overlay: rgba(3,6,14,.66);
 }
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+[data-theme="light"] {
+  --bg: #f2f5fa;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --card2: #f1f4f9;
+  --border: #e1e7f0;
+  --text: #0f172a;
+  --muted: #5b677c;
+  --dim: #9aa5b8;
+  --green: #16a34a;
+  --green-bg: rgba(22,163,74,.10);
+  --red: #e11d48;
+  --red-bg: rgba(225,29,72,.09);
+  --blue: #2563eb;
+  --blue-bg: rgba(37,99,235,.09);
+  --btn: #2563eb;
+  --gold: #d97706;
+  --gold-bg: rgba(217,119,6,.10);
+  --hero: linear-gradient(135deg, #2563eb 0%, #4f46e5 55%, #7c3aed 100%);
+  --shadow: 0 8px 26px rgba(15,23,42,.10);
+  --overlay: rgba(15,23,42,.45);
+}
 
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { background: var(--bg); }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Tiro Bangla', serif;
+  font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
   min-height: 100dvh;
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
 }
-
-/* ── TOP BAR ── */
-.topbar {
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 16px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.topbar-title { font-size: 1.1rem; }
-.drive-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 13px;
-  border-radius: 50px;
-  border: 1.5px solid var(--border);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  font-family: 'Tiro Bangla', serif;
-  font-size: 0.78rem;
-  transition: all 0.2s;
-}
-.drive-btn.connected { border-color: var(--green); color: var(--green); }
-.drive-btn.syncing { border-color: var(--blue); color: var(--blue); animation: pulse 1s infinite; }
-.drive-dot { width:7px; height:7px; border-radius:50%; background: currentColor; flex-shrink:0; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-/* ── BALANCE CARD ── */
-.balance-card {
-  margin: 12px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 20px;
-  background-image: radial-gradient(ellipse at top left, rgba(96,165,250,0.06) 0%, transparent 60%);
-}
-.bal-label { font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-.bal-amount { font-family: 'DM Mono', monospace; font-size: 2.2rem; font-weight: 500; transition: color 0.3s; }
-.bal-amount.pos { color: var(--green); }
-.bal-amount.neg { color: var(--red); }
-.bal-amount.zero { color: var(--muted); }
-.bal-row { display:flex; gap:20px; margin-top:14px; }
-.bal-stat { flex:1; background: var(--surface); border-radius:10px; padding:10px 12px; }
-.bal-stat-val { font-family:'DM Mono',monospace; font-size:1rem; }
-.bal-stat-val.g { color:var(--green); }
-.bal-stat-val.r { color:var(--red); }
-.bal-stat-lbl { font-size:0.68rem; color:var(--muted); margin-top:2px; }
-
-/* ── TABS ── */
-.tabs {
-  display: flex;
-  padding: 0 12px;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.tab {
-  flex: 1;
-  padding: 10px 6px;
-  border: none;
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--muted);
-  font-family: 'Tiro Bangla', serif;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid transparent;
-}
-.tab.active { background: var(--card); color: var(--text); border-color: var(--border); }
-
-/* ── SCROLL AREA ── */
-.scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 12px 20px;
-}
-.scroll-area::-webkit-scrollbar { width: 3px; }
-.scroll-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-/* ── CARD ── */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 10px;
-}
-.sec-title { font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-
-/* ── INPUTS ── */
-input[type=text], input[type=number] {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  color: var(--text);
-  font-family: 'Tiro Bangla', serif;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.2s;
-  width: 100%;
-}
-input:focus { border-color: var(--blue); }
-input::placeholder { color: var(--dim); font-size: 0.88rem; }
-input[type=number] { font-family: 'DM Mono', monospace; font-size: 1.05rem; }
-
-.row { display:flex; gap:8px; margin-bottom:9px; }
-.row input { flex:1; }
-
-/* ── BUTTONS ── */
-.btn {
-  padding: 12px 18px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-family: 'Tiro Bangla', serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.btn:active { transform: scale(0.97); }
-.btn-blue { background: var(--blue); color: #0a1525; }
-.btn-full { width:100%; padding:13px; font-size:0.95rem; border-radius:12px; }
-.btn-green { background: var(--green); color: #061508; }
-.btn-red { background: var(--red); color: #1a0409; }
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-family: 'Tiro Bangla', serif;
-  font-size: 0.82rem;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-ghost:active { border-color: var(--red); color: var(--red); }
-
-/* ── PERSON CHIPS ── */
-.chips { display:flex; flex-wrap:wrap; gap:7px; }
-.chip {
-  padding: 7px 12px;
-  border-radius: 50px;
-  border: 1.5px solid var(--border);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  font-family: 'Tiro Bangla', serif;
-  font-size: 0.82rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-.chip.active { border-color: var(--blue); color: var(--blue); background: rgba(96,165,250,0.1); }
-.chip-amt { font-family:'DM Mono',monospace; font-size:0.7rem; padding:1px 6px; border-radius:20px; background:rgba(255,255,255,0.06); }
-.chip-x { font-size:0.62rem; opacity:0.35; }
-
-/* ── TYPE TOGGLE ── */
-.type-toggle { display:flex; background:var(--surface); border-radius:10px; padding:3px; gap:3px; margin-bottom:10px; }
-.type-btn {
-  flex:1; padding:10px; border-radius:8px; border:none; background:transparent;
-  cursor:pointer; font-family:'Tiro Bangla',serif; font-size:0.88rem; color:var(--muted); transition:all 0.2s;
-}
-.type-btn.add.on { background:rgba(34,197,94,0.16); color:var(--green); }
-.type-btn.sub.on { background:rgba(244,63,94,0.16); color:var(--red); }
-
-/* ── SEL INFO ── */
-.sel-info {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px 13px; background:var(--surface); border-radius:10px; margin-bottom:10px;
-}
-.sel-name { color:var(--gold); font-size:0.9rem; }
-.sel-bal { font-family:'DM Mono',monospace; font-size:0.88rem; }
-
-/* ── HISTORY ── */
-.filter-row { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
-.fchip {
-  padding:5px 11px; border-radius:50px; border:1px solid var(--border);
-  background:transparent; color:var(--muted); cursor:pointer;
-  font-family:'Tiro Bangla',serif; font-size:0.75rem; transition:all 0.2s;
-}
-.fchip.on { background:var(--surface); border-color:var(--blue); color:var(--blue); }
-
-.tx-list { display:flex; flex-direction:column; gap:7px; }
-.tx-item {
-  display:flex; align-items:center; gap:10px;
-  padding:11px 12px; background:var(--surface); border-radius:10px;
-  animation: si 0.25s ease;
-}
-@keyframes si { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-.tx-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.tx-dot.add { background:var(--green); box-shadow:0 0 6px rgba(34,197,94,.4); }
-.tx-dot.sub { background:var(--red); box-shadow:0 0 6px rgba(244,63,94,.4); }
-.tx-body { flex:1; min-width:0; }
-.tx-who { font-size:0.75rem; color:var(--gold); }
-.tx-note { font-size:0.78rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.tx-time { font-size:0.65rem; color:var(--dim); font-family:'DM Mono',monospace; margin-top:1px; }
-.tx-amt { font-family:'DM Mono',monospace; font-size:0.92rem; flex-shrink:0; }
-.tx-amt.add { color:var(--green); }
-.tx-amt.sub { color:var(--red); }
-.tx-del { background:transparent; border:none; color:var(--dim); cursor:pointer; font-size:0.72rem; padding:3px 5px; border-radius:5px; }
-.tx-del:active { color:var(--red); }
-
-.empty { text-align:center; padding:30px 16px; color:var(--dim); font-size:0.88rem; }
-.no-sel { text-align:center; padding:24px 16px; color:var(--dim); font-size:0.88rem; }
-
-/* ── TOAST ── */
-.toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
-  background: var(--card); border: 1px solid var(--border); color: var(--text);
-  padding: 11px 20px; border-radius: 50px; font-size: 0.85rem;
-  transition: transform 0.3s; z-index: 999; white-space: nowrap;
-}
-.toast.show { transform: translateX(-50%) translateY(0); }
-
-/* ── DRIVE PANEL ── */
-.drive-panel { }
-.drive-status-row { display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--surface); border-radius:10px; margin-bottom:10px; }
-.drive-icon { font-size:1.4rem; }
-.drive-info { flex:1; }
-.drive-info-title { font-size:0.9rem; }
-.drive-info-sub { font-size:0.72rem; color:var(--muted); margin-top:2px; }
-.sync-actions { display:flex; gap:8px; }
-
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+svg { display:block; flex-shrink:0; }
 .hidden { display:none !important; }
+
+/* ═════════ APP BAR ═════════ */
+.appbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+.brand-ico { width:38px; height:38px; border-radius:11px; }
+.brand-name { font-size:1.12rem; font-weight:700; line-height:1.1; }
+.brand-sub { font-size:.74rem; color:var(--muted); }
+.appbar-title { flex:1; min-width:0; font-size:1.05rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.icon-btn {
+  width:40px; height:40px; border-radius:12px;
+  display:grid; place-items:center; color:var(--muted);
+  transition: background .15s, color .15s;
+}
+.icon-btn:active { background: var(--card2); color: var(--text); }
+
+.page { padding: 14px 14px 110px; }
+
+/* ═════════ HERO SUMMARY ═════════ */
+.hero {
+  background: var(--hero);
+  border-radius: 22px;
+  padding: 20px;
+  color: #fff;
+  box-shadow: var(--shadow);
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content:''; position:absolute; right:-40px; top:-40px; width:160px; height:160px;
+  border-radius:50%; background: rgba(255,255,255,.08);
+}
+.hero-lbl { font-size:.8rem; opacity:.82; }
+.hero-amt { font-size:2.1rem; font-weight:700; margin:2px 0 14px; letter-spacing:.3px; }
+.hero-row { display:flex; gap:10px; position:relative; z-index:1; }
+.hero-stat { flex:1; background: rgba(255,255,255,.13); border-radius:14px; padding:9px 12px; }
+.hero-stat b { display:block; font-size:1.02rem; font-weight:600; }
+.hero-stat span { font-size:.72rem; opacity:.85; }
+
+/* ═════════ BANNER ═════════ */
+.banner {
+  display:flex; align-items:center; gap:10px;
+  margin-top:12px; padding:11px 12px;
+  background: var(--gold-bg); border:1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+  border-radius:14px; font-size:.85rem; color: var(--text);
+}
+.banner .b-ico { color: var(--gold); }
+.banner .b-txt { flex:1; }
+.banner .b-btn { color: var(--gold); font-weight:600; padding:4px 6px; }
+
+/* ═════════ SEARCH / TOOLBAR ═════════ */
+.searchbar {
+  display:flex; align-items:center; gap:8px;
+  margin-top:14px; padding:0 14px;
+  background: var(--card); border:1.5px solid var(--border); border-radius:14px;
+  color: var(--muted); transition: border-color .15s;
+}
+.searchbar:focus-within { border-color: var(--blue); }
+.searchbar input { flex:1; min-width:0; padding:12px 0; background:none; border:none; outline:none; font-size:.95rem; }
+.searchbar input::placeholder { color: var(--dim); }
+.toolbar { display:flex; align-items:center; gap:6px; margin:10px 0 12px; }
+.chips { display:flex; gap:6px; overflow-x:auto; flex:1; scrollbar-width:none; }
+.chips::-webkit-scrollbar { display:none; }
+.chip {
+  padding:6px 12px; border-radius:999px; white-space:nowrap;
+  border:1px solid var(--border); background: var(--card);
+  color: var(--muted); font-size:.8rem; transition: all .15s;
+}
+.chip.on { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); font-weight:600; }
+.sort-sel {
+  padding:6px 8px; border-radius:10px; border:1px solid var(--border);
+  background: var(--card); color: var(--muted); font-size:.8rem; outline:none;
+}
+
+/* ═════════ PERSON LIST ═════════ */
+.plist { display:flex; flex-direction:column; gap:8px; }
+.pcard {
+  display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+  padding:12px; background: var(--card); border:1px solid var(--border); border-radius:16px;
+  transition: transform .12s, border-color .15s;
+  animation: rise .25s ease both;
+}
+.pcard:active { transform: scale(.985); border-color: var(--blue); }
+@keyframes rise { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+.pc-body { flex:1; min-width:0; }
+.pc-name { font-weight:600; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pc-sub { font-size:.76rem; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pc-right { text-align:right; flex-shrink:0; }
+.pc-bal { font-weight:700; font-size:.98rem; }
+.pc-cnt { font-size:.7rem; color: var(--dim); }
+.pos { color: var(--green); } .neg { color: var(--red); } .zero { color: var(--muted); }
+
+/* ═════════ AVATAR ═════════ */
+.av {
+  width:46px; height:46px; border-radius:50%; flex-shrink:0;
+  display:grid; place-items:center; overflow:hidden;
+  font-weight:700; font-size:1.1rem; color:#fff;
+}
+.av img { width:100%; height:100%; object-fit:cover; }
+.av-lg { width:96px; height:96px; font-size:2.2rem; border:3px solid var(--card); box-shadow: 0 0 0 2px var(--border), var(--shadow); }
+
+/* ═════════ EMPTY ═════════ */
+.empty { text-align:center; padding:34px 18px; color: var(--muted); }
+.empty-ico { width:72px; height:72px; margin:0 auto 12px; border-radius:22px; display:grid; place-items:center; background: var(--blue-bg); color: var(--blue); }
+.empty h3 { color: var(--text); font-size:1.05rem; margin-bottom:6px; }
+.empty p { font-size:.86rem; }
+.steps { text-align:left; margin:16px auto 0; max-width:320px; display:flex; flex-direction:column; gap:8px; }
+.step { display:flex; gap:10px; align-items:flex-start; font-size:.86rem; background: var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 12px; }
+.step-n { width:22px; height:22px; border-radius:50%; background: var(--blue); color:#fff; display:grid; place-items:center; font-size:.75rem; font-weight:700; flex-shrink:0; margin-top:1px; }
+
+/* ═════════ FAB ═════════ */
+.fab {
+  position: fixed; z-index: 40;
+  right: max(16px, calc(50vw - 260px + 16px));
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  display:flex; align-items:center; gap:8px;
+  padding:14px 20px 14px 16px; border-radius:18px;
+  background: var(--btn); color:#fff; font-weight:600;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--btn) 45%, transparent);
+  transition: transform .12s;
+}
+.fab:active { transform: scale(.95); }
+
+/* ═════════ PROFILE (person page) ═════════ */
+.profile { text-align:center; padding:6px 0 4px; }
+.profile .av-lg { margin: 0 auto 10px; cursor:pointer; }
+.pf-name { font-size:1.35rem; font-weight:700; }
+.pf-phone { color: var(--muted); font-size:.9rem; }
+.pf-note { color: var(--muted); font-size:.84rem; margin-top:2px; }
+.pf-actions { display:flex; justify-content:center; gap:14px; margin-top:14px; }
+.pf-act { text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:.72rem; color: var(--muted); }
+.pf-act span.ic {
+  width:46px; height:46px; border-radius:15px; display:grid; place-items:center;
+  background: var(--card); border:1px solid var(--border); color: var(--blue);
+}
+.pf-act:active span.ic { background: var(--blue-bg); }
+
+.balcard {
+  margin-top:16px; padding:16px; border-radius:20px;
+  background: var(--card); border:1px solid var(--border);
+}
+.bc-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.bc-lbl { font-size:.8rem; color: var(--muted); }
+.bc-amt { font-size:1.9rem; font-weight:700; }
+.bc-row { display:flex; gap:8px; margin-top:12px; }
+.bc-stat { flex:1; background: var(--card2); border-radius:12px; padding:8px 10px; }
+.bc-stat b { display:block; font-size:.95rem; }
+.bc-stat span { font-size:.7rem; color: var(--muted); }
+
+.tip {
+  display:flex; gap:10px; align-items:flex-start; margin-top:12px; padding:11px 12px;
+  background: var(--blue-bg); border-radius:14px; font-size:.82rem; color: var(--text);
+}
+.tip .t-ico { color: var(--blue); margin-top:1px; }
+.tip .t-x { color: var(--muted); margin-left:auto; padding:0 2px; }
+
+/* ═════════ HISTORY ═════════ */
+.sec-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:20px 2px 10px; }
+.sec-title { font-weight:600; font-size:.98rem; }
+.day-head { font-size:.75rem; color: var(--muted); font-weight:600; margin:14px 4px 6px; }
+.day-head:first-child { margin-top:0; }
+.tx {
+  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  padding:11px 12px; background: var(--card); border:1px solid var(--border); border-radius:14px;
+  margin-bottom:6px; animation: rise .22s ease both;
+}
+.tx:active { border-color: var(--blue); }
+.tx-ic { width:34px; height:34px; border-radius:11px; display:grid; place-items:center; font-weight:700; font-size:1.1rem; flex-shrink:0; }
+.tx-ic.add { background: var(--green-bg); color: var(--green); }
+.tx-ic.sub { background: var(--red-bg); color: var(--red); }
+.tx-b { flex:1; min-width:0; }
+.tx-note { font-size:.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tx-meta { font-size:.7rem; color: var(--dim); }
+.tx-amt { font-weight:700; font-size:.95rem; flex-shrink:0; }
+.tx-amt.add { color: var(--green); } .tx-amt.sub { color: var(--red); }
+
+/* bottom action bar */
+.actbar {
+  position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
+  bottom: 0; width: 100%; max-width: 520px;
+  display:flex; gap:10px; padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+}
+
+/* ═════════ BUTTONS ═════════ */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:13px 16px; border-radius:14px; font-weight:600; font-size:.95rem;
+  transition: transform .1s, opacity .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity:.45; pointer-events:none; }
+.btn-full { width:100%; }
+.btn-flex { flex:1; }
+.btn-blue { background: var(--btn); color:#fff; }
+.btn-green { background: var(--green); color:#fff; }
+.btn-red { background: var(--red); color:#fff; }
+.btn-soft { background: var(--card2); color: var(--text); border:1px solid var(--border); }
+.btn-ghost-red { background: var(--red-bg); color: var(--red); }
+
+/* ═════════ OVERLAY / SHEET / DIALOG ═════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--overlay);
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; transition: opacity .2s;
+}
+.overlay.show { opacity:1; }
+.overlay.center { align-items:center; padding:20px; }
+.sheet {
+  width:100%; max-width:520px; max-height: 92dvh; overflow-y:auto;
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 8px 18px calc(20px + env(safe-area-inset-bottom));
+  transform: translateY(30px); transition: transform .22s ease;
+}
+.overlay.show .sheet { transform:none; }
+.sheet-handle { width:40px; height:5px; border-radius:3px; background: var(--border); margin: 6px auto 12px; }
+.sheet h3 { font-size:1.12rem; margin-bottom:12px; }
+.dialog {
+  width:100%; max-width:380px; background: var(--surface); border-radius:22px; padding:22px 20px 18px;
+  transform: scale(.95); transition: transform .18s ease;
+}
+.overlay.show .dialog { transform:none; }
+.dlg-ico { width:52px; height:52px; border-radius:16px; display:grid; place-items:center; margin-bottom:12px; }
+.dlg-ico.danger { background: var(--red-bg); color: var(--red); }
+.dlg-ico.info { background: var(--blue-bg); color: var(--blue); }
+.dialog h3 { font-size:1.1rem; margin-bottom:6px; }
+.dialog p { color: var(--muted); font-size:.9rem; }
+.dlg-btns { display:flex; gap:10px; margin-top:18px; }
+
+.pv { display:flex; justify-content:center; }
+.photo-view { max-width: 92vw; max-height: 80dvh; border-radius: 18px; box-shadow: var(--shadow); }
+
+/* form */
+.field { margin-bottom:12px; }
+.field label { display:block; font-size:.8rem; color: var(--muted); margin-bottom:5px; font-weight:500; }
+.inp {
+  width:100%; padding:12px 14px; border-radius:12px;
+  background: var(--card2); border:1.5px solid var(--border); outline:none;
+  font-size:1rem; transition: border-color .15s;
+}
+.inp:focus { border-color: var(--blue); }
+.inp.err { border-color: var(--red); animation: shake .3s; }
+@keyframes shake { 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+.inp-amt { font-size:1.6rem; font-weight:700; text-align:center; padding:14px; }
+.hint { font-size:.76rem; color: var(--gold); margin-top:4px; }
+.type-toggle { display:flex; gap:6px; background: var(--card2); padding:4px; border-radius:14px; margin-bottom:14px; }
+.type-toggle button { flex:1; padding:10px; border-radius:11px; font-weight:600; color: var(--muted); transition: all .15s; }
+.type-toggle .add.on { background: var(--green); color:#fff; }
+.type-toggle .sub.on { background: var(--red); color:#fff; }
+.quick { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.quick button { flex:1; min-width:56px; padding:7px 0; border-radius:10px; background: var(--card2); border:1px solid var(--border); font-size:.82rem; color: var(--muted); }
+.quick button:active { color: var(--blue); border-color: var(--blue); }
+
+.photo-pick { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+.photo-pick .av { width:72px; height:72px; font-size:1.6rem; cursor:pointer; position:relative; }
+.photo-pick .pp-btns { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+.link-btn { color: var(--blue); font-size:.88rem; font-weight:600; padding:2px 0; }
+.link-btn.red { color: var(--red); }
+
+/* action sheet list */
+.alist { display:flex; flex-direction:column; gap:4px; }
+.aitem { display:flex; align-items:center; gap:12px; width:100%; padding:13px 12px; border-radius:14px; text-align:left; font-size:.98rem; }
+.aitem:active { background: var(--card2); }
+.aitem .ic { color: var(--muted); }
+.aitem.danger, .aitem.danger .ic { color: var(--red); }
+.asum { background: var(--card2); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+.asum b { font-size:1.2rem; }
+.asum div { font-size:.82rem; color: var(--muted); }
+
+/* ═════════ TOAST ═════════ */
+.toast {
+  position: fixed; z-index: 400; left: 50%;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 30px); opacity:0; pointer-events:none;
+  display:flex; align-items:center; gap:14px;
+  width: max-content; max-width: calc(100vw - 32px);
+  background: #1f2937; color: #f9fafb; border-radius: 14px;
+  padding: 12px 16px; font-size:.88rem; box-shadow: var(--shadow);
+  transition: transform .25s, opacity .25s;
+}
+.toast.show { transform: translate(-50%, 0); opacity:1; pointer-events:auto; }
+.toast button { color: #93c5fd; font-weight:700; white-space:nowrap; }
+
+/* ═════════ SETTINGS / LISTS ═════════ */
+.group { margin-bottom:18px; }
+.group-title { font-size:.78rem; color: var(--muted); font-weight:600; margin: 0 4px 8px; }
+.gcard { background: var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+.row-item { display:flex; align-items:center; gap:12px; width:100%; padding:14px; text-align:left; }
+.row-item + .row-item { border-top:1px solid var(--border); }
+.row-item:active { background: var(--card2); }
+.ri-ic { width:36px; height:36px; border-radius:11px; display:grid; place-items:center; flex-shrink:0; }
+.ri-b { flex:1; min-width:0; }
+.ri-t { font-size:.95rem; font-weight:500; }
+.ri-s { font-size:.75rem; color: var(--muted); }
+.ri-end { color: var(--dim); font-size:.8rem; }
+.c-blue { background: var(--blue-bg); color: var(--blue); }
+.c-green { background: var(--green-bg); color: var(--green); }
+.c-red { background: var(--red-bg); color: var(--red); }
+.c-gold { background: var(--gold-bg); color: var(--gold); }
+.switch { width:44px; height:26px; border-radius:13px; background: var(--border); position:relative; transition: background .2s; flex-shrink:0; }
+.switch::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition: transform .2s; }
+.switch.on { background: var(--blue); }
+.switch.on::after { transform: translateX(18px); }
+.drive-box { padding:14px; }
+.drive-st { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+.drive-btns { display:flex; gap:8px; }
+.syncing { animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity:.45; } }
+
+/* help */
+.help details { background: var(--card); border:1px solid var(--border); border-radius:16px; margin-bottom:8px; overflow:hidden; }
+.help summary { list-style:none; display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer; font-weight:600; font-size:.95rem; }
+.help summary::-webkit-details-marker { display:none; }
+.help summary .chev { margin-left:auto; color: var(--dim); transition: transform .2s; }
+.help details[open] summary .chev { transform: rotate(90deg); }
+.help .hb { padding: 0 16px 14px 62px; color: var(--muted); font-size:.88rem; }
+.help .hb li { margin: 4px 0 4px 16px; }
+.help .hb b { color: var(--text); font-weight:600; }
+
+/* trash */
+.trow { display:flex; align-items:center; gap:10px; padding:12px; background: var(--card); border:1px solid var(--border); border-radius:14px; margin-bottom:8px; }
+.trow .ri-b { min-width:0; }
+.trow .ri-t { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tbtn { padding:7px 10px; border-radius:10px; font-size:.8rem; font-weight:600; }
+
+/* ═════════ ONBOARDING ═════════ */
+.onb { position: fixed; inset:0; z-index: 300; background: var(--bg); display:flex; flex-direction:column; max-width:520px; margin:0 auto; padding: calc(16px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom)); }
+.onb-skip { align-self:flex-end; color: var(--muted); font-size:.9rem; padding:6px 8px; }
+.onb-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; }
+.onb-art { width:132px; height:132px; border-radius:38px; display:grid; place-items:center; background: var(--hero); color:#fff; box-shadow: var(--shadow); }
+.onb-body h2 { font-size:1.45rem; }
+.onb-body p { color: var(--muted); font-size:.98rem; max-width:340px; }
+.onb-dots { display:flex; justify-content:center; gap:6px; margin-bottom:18px; }
+.onb-dots i { width:8px; height:8px; border-radius:4px; background: var(--border); transition: all .2s; }
+.onb-dots i.on { width:24px; background: var(--blue); }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div class="topbar-title">📒 হিসাব খাতা</div>
-  <button class="drive-btn" id="driveBtn" onclick="driveAction()">
-    <div class="drive-dot"></div>
-    <span id="driveBtnTxt">Drive সংযোগ</span>
-  </button>
-</div>
-
-<!-- BALANCE -->
-<div class="balance-card">
-  <div class="bal-label">মোট ব্যালেন্স</div>
-  <div class="bal-amount zero" id="balAmt">৳ ০</div>
-  <div class="bal-row">
-    <div class="bal-stat">
-      <div class="bal-stat-val g" id="totalIn">৳ ০</div>
-      <div class="bal-stat-lbl">মোট যোগ</div>
-    </div>
-    <div class="bal-stat">
-      <div class="bal-stat-val r" id="totalOut">৳ ০</div>
-      <div class="bal-stat-lbl">মোট বিয়োগ</div>
-    </div>
-    <div class="bal-stat">
-      <div class="bal-stat-val" id="txCount" style="color:var(--blue)">০</div>
-      <div class="bal-stat-lbl">লেনদেন</div>
-    </div>
-  </div>
-</div>
-
-<!-- TABS -->
-<div class="tabs">
-  <button class="tab active" onclick="tab('names')">👤 নাম</button>
-  <button class="tab" onclick="tab('tx')">💳 লেনদেন</button>
-  <button class="tab" onclick="tab('history')">🕓 হিস্ট্রি</button>
-  <button class="tab" onclick="tab('drive')">☁️ Drive</button>
-</div>
-
-<!-- SCROLL AREA -->
-<div class="scroll-area">
-
-  <!-- TAB: NAMES -->
-  <div id="tab-names">
-    <div class="card">
-      <div class="sec-title">নতুন নাম যোগ করুন</div>
-      <div class="row">
-        <input type="text" id="nameInp" placeholder="নাম লিখুন..." maxlength="30">
-        <button class="btn btn-blue" onclick="addPerson()">যোগ</button>
-      </div>
-      <div class="chips" id="chips">
-        <span style="color:var(--dim);font-size:0.82rem">কোনো নাম নেই এখনো</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: TX -->
-  <div id="tab-tx" class="hidden">
-    <div class="card" id="txCard">
-      <div class="no-sel">👈 আগে "নাম" ট্যাব থেকে একটি নাম বেছে নিন</div>
-    </div>
-  </div>
-
-  <!-- TAB: HISTORY -->
-  <div id="tab-history" class="hidden">
-    <div class="card">
-      <div class="sec-title">লেনদেনের ইতিহাস</div>
-      <div class="filter-row">
-        <button class="fchip on" onclick="filter('all',this)">সব</button>
-        <button class="fchip" onclick="filter('add',this)">শুধু যোগ</button>
-        <button class="fchip" onclick="filter('sub',this)">শুধু বিয়োগ</button>
-      </div>
-      <div class="tx-list" id="txList">
-        <div class="empty">এখনো কোনো লেনদেন হয়নি</div>
-      </div>
-      <div style="margin-top:12px;display:flex;justify-content:flex-end">
-        <button class="btn-ghost" onclick="clearAll()">🗑 সব মুছুন</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: DRIVE -->
-  <div id="tab-drive" class="hidden">
-    <div class="card drive-panel">
-      <div class="sec-title">Google Drive সিঙ্ক</div>
-
-      <!-- Not connected -->
-      <div id="driveNotConn">
-        <div class="drive-status-row">
-          <div class="drive-icon">☁️</div>
-          <div class="drive-info">
-            <div class="drive-info-title">Google Drive সংযুক্ত নয়</div>
-            <div class="drive-info-sub">সংযোগ করলে হিস্ট্রি অনলাইনে সেভ থাকবে</div>
-          </div>
-        </div>
-        <button class="btn btn-full btn-blue" onclick="driveSignIn()">🔗 Google Drive সংযোগ করুন</button>
-        <div id="clientIdWarn" class="hidden" style="margin-top:12px;padding:12px;background:var(--surface);border-radius:10px;font-size:0.78rem;color:var(--muted);line-height:1.7">
-          ⚠️ <strong style="color:var(--text)">Client ID দরকার!</strong><br>
-          index.html ফাইলের উপরে <code style="color:var(--gold);font-family:'DM Mono',monospace">google-client-id</code><br>
-          meta ট্যাগে আপনার Google Client ID বসান।
-        </div>
-      </div>
-
-      <!-- Connected -->
-      <div id="driveConn" class="hidden">
-        <div class="drive-status-row">
-          <div class="drive-icon">✅</div>
-          <div class="drive-info">
-            <div class="drive-info-title" id="driveUser">সংযুক্ত</div>
-            <div class="drive-info-sub" id="driveLastSync">শেষ সিঙ্ক: —</div>
-          </div>
-        </div>
-        <div class="sync-actions">
-          <button class="btn btn-blue" style="flex:1" onclick="driveUpload()">⬆ আপলোড</button>
-          <button class="btn" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text)" onclick="driveDownload()">⬇ ডাউনলোড</button>
-        </div>
-        <div style="margin-top:9px">
-          <button class="btn-ghost" style="width:100%" onclick="driveSignOut()">সংযোগ বিচ্ছিন্ন করুন</button>
-        </div>
-        <div style="margin-top:12px;padding:10px 13px;background:var(--surface);border-radius:10px;font-size:0.75rem;color:var(--muted);line-height:1.6">
-          📁 ফাইল সেভ হয়: <code style="color:var(--blue)">hisab-khata-data.json</code><br>
-          📍 আপনার Google Drive-এ
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- end scroll-area -->
-
-<div class="toast" id="toast"></div>
+<div id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fileImport" accept="application/json,.json" class="hidden">
 
 <!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js" async defer></script>
 
 <script>
 // ══════════════════════════════════════
-//  CONFIG — Client ID এখানে থেকে পড়া হবে
+//  CONFIG
 // ══════════════════════════════════════
 const CLIENT_ID = document.querySelector('meta[name="google-client-id"]').content;
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const FILE_NAME = 'hisab-khata-data.json';
+const LS_DATA = 'hk_data_v2';
+const LS_OLD = 'hk_persons';
+const LS_PREFS = 'hk_prefs';
+const LS_SNAPSHOT = 'hk_before_restore';
+const TRASH_DAYS = 30;
+const DAY = 86400000;
+const APP_VERSION = '2.0';
 
 // ══════════════════════════════════════
-//  STATE
+//  ICONS
 // ══════════════════════════════════════
+const svg = (d, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  back: svg('<path d="M15 18l-6-6 6-6"/>'),
+  chev: svg('<path d="M9 18l6-6-6-6"/>', 18),
+  settings: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+  help: svg('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
+  search: svg('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>', 19),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  minus: svg('<path d="M5 12h14"/>'),
+  phone: svg('<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>', 20),
+  msg: svg('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', 20),
+  share: svg('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/>', 20),
+  edit: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>', 20),
+  trash: svg('<path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>', 20),
+  more: svg('<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>'),
+  camera: svg('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>', 20),
+  cloud: svg('<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>', 20),
+  upload: svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/>', 19),
+  download: svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/>', 19),
+  restore: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>', 18),
+  moon: svg('<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>', 20),
+  book: svg('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>', 20),
+  alert: svg('<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>', 20),
+  info: svg('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>', 18),
+  close: svg('<path d="M18 6L6 18M6 6l12 12"/>', 18),
+  users: svg('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  shield: svg('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'),
+  file: svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>', 20),
+};
+
+// ══════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════
+const $ = s => document.querySelector(s);
+const app = $('#app');
 const round2 = n => Math.round(n * 100) / 100;
-const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
-const BAD_NAMES = ['__proto__', 'constructor', 'prototype'];
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
-// ডেটা যাচাই করে পরিষ্কার করে — নষ্ট/অচেনা ডেটা বাদ যায়, total নতুন করে হিসাব হয়
-function normalizePersons(raw) {
+function h(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function bn(n) {
+  return Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 2 }).replace(/[0-9]/g, d => BN_DIGITS[d]);
+}
+function bnInt(n) { return String(n).replace(/[0-9]/g, d => BN_DIGITS[d]); }
+function money(n, signed = false) {
+  const s = n < 0 ? '− ' : (signed && n > 0 ? '+ ' : '');
+  return s + '৳ ' + bn(n);
+}
+function cls(n) { return n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero'; }
+function toAscii(s) { return String(s).replace(/[০-৯]/g, d => BN_DIGITS.indexOf(d)); }
+
+function dayStart(ts) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }); }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('bn-BD', { hour: 'numeric', minute: '2-digit' }); }
+function relDay(ts) {
+  const diff = Math.round((dayStart(Date.now()) - dayStart(ts)) / DAY);
+  if (diff === 0) return 'আজ';
+  if (diff === 1) return 'গতকাল';
+  if (diff > 1 && diff < 7) return bnInt(diff) + ' দিন আগে';
+  return fmtDate(ts);
+}
+function isoDate(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function hueOf(s) { let x = 0; for (const c of s) x = (x * 31 + c.codePointAt(0)) % 360; return x; }
+function avatar(p, extra = '') {
+  if (p.photo) return `<div class="av ${extra}"><img src="${h(p.photo)}" alt=""></div>`;
+  const hue = hueOf(p.name);
+  const letter = [...p.name.trim()][0] || '?';
+  return `<div class="av ${extra}" style="background:linear-gradient(135deg,hsl(${hue} 65% 52%),hsl(${(hue + 40) % 360} 70% 42%))">${h(letter)}</div>`;
+}
+
+// ══════════════════════════════════════
+//  DATA — যাচাই ও মাইগ্রেশন
+// ══════════════════════════════════════
+const safeId = v => (typeof v === 'string' || typeof v === 'number') && SAFE_ID.test(String(v)) ? String(v) : uid();
+const validPhoto = p => typeof p === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(p) && p.length < 500000 ? p : '';
+
+function normTx(t, i = 0) {
+  if (!t || (t.type !== 'add' && t.type !== 'sub')) return null;
+  const amount = +t.amount;
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  let ts = Number(t.ts);
+  if (!Number.isFinite(ts) || ts <= 0) {
+    ts = Number(t.id);                               // পুরনো ভার্সনে id = সময়
+    if (!Number.isFinite(ts) || ts < 1e12) ts = Date.now() - i;
+  }
+  return { id: safeId(t.id), type: t.type, amount: round2(amount), note: String(t.note ?? '').slice(0, 100), ts };
+}
+
+function normPerson(p) {
+  if (!p || typeof p !== 'object') return null;
+  const name = String(p.name ?? '').trim().slice(0, 40);
+  if (!name) return null;
+  const seen = new Set();
+  const txns = (Array.isArray(p.txns) ? p.txns : []).map(normTx).filter(Boolean);
+  txns.forEach(t => { if (seen.has(t.id)) t.id = uid(); seen.add(t.id); });
+  txns.sort((a, b) => b.ts - a.ts);
+  return {
+    id: safeId(p.id), name,
+    phone: String(p.phone ?? '').slice(0, 20),
+    note: String(p.note ?? '').slice(0, 120),
+    photo: validPhoto(p.photo),
+    created: Number(p.created) || (txns.length ? txns[txns.length - 1].ts : Date.now()),
+    txns,
+  };
+}
+
+function normTrash(e) {
+  if (!e || typeof e !== 'object') return null;
+  const deletedAt = Number(e.deletedAt) || Date.now();
+  if (e.kind === 'person') {
+    const person = normPerson(e.person);
+    return person ? { id: safeId(e.id), kind: 'person', deletedAt, person } : null;
+  }
+  if (e.kind === 'tx') {
+    const tx = normTx(e.tx);
+    return tx ? { id: safeId(e.id), kind: 'tx', deletedAt, personId: safeId(e.personId), personName: String(e.personName ?? '').slice(0, 40), tx } : null;
+  }
+  return null;
+}
+
+function uniqIds(list) {
+  const seen = new Set();
+  list.forEach(x => { if (seen.has(x.id)) x.id = uid(); seen.add(x.id); });
+  return list;
+}
+
+// নতুন ফরম্যাট {people, trash} এবং পুরনো ফরম্যাট {persons:{নাম:{txns}}} দুটোই বোঝে
+function normalizeData(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const out = {};
-  for (const name of Object.keys(raw)) {
-    if (BAD_NAMES.includes(name)) continue;
-    const p = raw[name];
-    const txns = (p && Array.isArray(p.txns) ? p.txns : [])
-      .filter(t => t && (t.type === 'add' || t.type === 'sub') && Number.isFinite(+t.amount) && +t.amount > 0)
-      .map((t, i) => ({
-        type: t.type,
-        amount: +t.amount,
-        note: String(t.note ?? ''),
-        person: name,
-        time: String(t.time ?? ''),
-        id: Number.isFinite(+t.id) ? +t.id : i,
-      }));
-    out[name] = {
-      txns,
-      total: round2(txns.reduce((s, t) => s + (t.type === 'add' ? t.amount : -t.amount), 0)),
+  if (Array.isArray(raw.people)) {
+    return {
+      people: uniqIds(raw.people.map(normPerson).filter(Boolean)),
+      trash: uniqIds((Array.isArray(raw.trash) ? raw.trash : []).map(normTrash).filter(Boolean)),
     };
   }
+  const src = raw.persons && typeof raw.persons === 'object' && !Array.isArray(raw.persons) ? raw.persons : raw;
+  const people = Object.keys(src)
+    .filter(k => !['__proto__', 'constructor', 'prototype'].includes(k) && src[k] && Array.isArray(src[k].txns))
+    .map(k => normPerson({ ...src[k], name: k, id: undefined }))
+    .filter(Boolean);
+  if (!people.length && Object.keys(src).length && src !== raw) return null;
+  return { people: uniqIds(people), trash: [] };
+}
+
+function loadData() {
+  try {
+    const cur = localStorage.getItem(LS_DATA);
+    if (cur) { const d = normalizeData(JSON.parse(cur)); if (d) return d; }
+  } catch (e) {}
+  try {
+    const old = localStorage.getItem(LS_OLD);
+    if (old) { const d = normalizeData(JSON.parse(old)); if (d) { d.migrated = true; return d; } }
+  } catch (e) {}
+  return { people: [], trash: [] };
+}
+
+function loadPrefs() {
+  const def = { theme: 'dark', onboarded: false, lastBackup: 0, snoozeBackup: 0, tipTx: false, sort: 'recent' };
+  try { return { ...def, ...(JSON.parse(localStorage.getItem(LS_PREFS) || '{}') || {}) }; }
+  catch (e) { return def; }
+}
+
+let db = loadData();
+let prefs = loadPrefs();
+const ui = { q: '', filter: 'all', hfilter: 'all' };
+
+function save() {
+  try { localStorage.setItem(LS_DATA, JSON.stringify({ version: 2, people: db.people, trash: db.trash })); return true; }
+  catch (e) { toast('⚠️ ফোনে জায়গা নেই — সেভ করা যায়নি। কিছু ছবি সরিয়ে দেখুন।', { dur: 4500 }); return false; }
+}
+function savePrefs() { try { localStorage.setItem(LS_PREFS, JSON.stringify(prefs)); } catch (e) {} }
+
+function purgeTrash() {
+  const limit = Date.now() - TRASH_DAYS * DAY;
+  const before = db.trash.length;
+  db.trash = db.trash.filter(e => e.deletedAt > limit);
+  return before !== db.trash.length;
+}
+
+if (db.migrated) { delete db.migrated; save(); }
+if (purgeTrash()) save();
+
+// ══════════════════════════════════════
+//  CALCULATIONS
+// ══════════════════════════════════════
+const findPerson = id => db.people.find(p => p.id === id);
+function pstats(p) {
+  let tin = 0, tout = 0;
+  p.txns.forEach(t => t.type === 'add' ? tin += t.amount : tout += t.amount);
+  return { tin: round2(tin), tout: round2(tout), bal: round2(tin - tout), last: p.txns[0]?.ts || 0, count: p.txns.length };
+}
+function totals() {
+  let tin = 0, tout = 0, count = 0;
+  db.people.forEach(p => { const s = pstats(p); tin += s.tin; tout += s.tout; count += s.count; });
+  return { tin: round2(tin), tout: round2(tout), net: round2(tin - tout), count };
+}
+const sortTx = p => p.txns.sort((a, b) => b.ts - a.ts);
+
+// ══════════════════════════════════════
+//  ROUTER
+// ══════════════════════════════════════
+function route() {
+  const parts = location.hash.replace(/^#\/?/, '').split('/');
+  return { page: parts[0] || 'home', arg: decodeURIComponent(parts[1] || '') };
+}
+function go(hash) {
+  if (location.hash === hash) { render(); return; }
+  location.hash = hash;
+  history.replaceState({ inApp: true }, '');
+}
+function goBack() {
+  if (history.state && history.state.inApp) history.back();
+  else { location.replace('#/'); }
+}
+window.addEventListener('hashchange', () => { if (modal) dropModal(); render(); window.scrollTo(0, 0); });
+
+function render() {
+  const r = route();
+  if (r.page === 'p') { const p = findPerson(r.arg); if (p) return renderPerson(p); location.replace('#/'); return; }
+  if (r.page === 'settings') return renderSettings();
+  if (r.page === 'trash') return renderTrash();
+  if (r.page === 'help') return renderHelp();
+  renderHome();
+}
+
+// ══════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════
+function backupBanner() {
+  const hasData = db.people.some(p => p.txns.length);
+  const old = Date.now() - prefs.lastBackup > 7 * DAY;
+  if (!hasData || !old || Date.now() < prefs.snoozeBackup) return '';
+  return `<div class="banner"><span class="b-ico">${I.alert}</span>
+    <span class="b-txt">${prefs.lastBackup ? 'এক সপ্তাহের বেশি ব্যাকআপ নেওয়া হয়নি।' : 'এখনো কোনো ব্যাকআপ নেওয়া হয়নি।'} ফোন হারালে হিসাবও হারাবে।</span>
+    <button class="b-btn" onclick="go('#/settings')">ব্যাকআপ</button>
+    <button class="b-btn" style="color:var(--muted)" onclick="snoozeBackup()" aria-label="পরে">${I.close}</button></div>`;
+}
+function snoozeBackup() { prefs.snoozeBackup = Date.now() + 3 * DAY; savePrefs(); render(); }
+
+function renderHome() {
+  const t = totals();
+  app.innerHTML = `
+  <header class="appbar">
+    <div class="brand"><img src="icon-192.png" class="brand-ico" alt="">
+      <div><div class="brand-name">হিসাব খাতা</div><div class="brand-sub">${bnInt(db.people.length)} জনের খাতা · ${bnInt(t.count)}টি লেনদেন</div></div></div>
+    <button class="icon-btn" onclick="go('#/help')" aria-label="নির্দেশিকা">${I.help}</button>
+    <button class="icon-btn" onclick="go('#/settings')" aria-label="সেটিংস">${I.settings}</button>
+  </header>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-lbl">মোট ব্যালেন্স</div>
+      <div class="hero-amt">${money(t.net)}</div>
+      <div class="hero-row">
+        <div class="hero-stat"><b>${money(t.tin)}</b><span>মোট যোগ (+)</span></div>
+        <div class="hero-stat"><b>${money(t.tout)}</b><span>মোট বিয়োগ (−)</span></div>
+      </div>
+    </section>
+    ${backupBanner()}
+    ${db.people.length ? `
+    <label class="searchbar">${I.search}<input id="q" type="search" placeholder="নাম বা ফোন নম্বর দিয়ে খুঁজুন..." value="${h(ui.q)}" autocomplete="off"></label>
+    <div class="toolbar">
+      <div class="chips">
+        ${[['all','সব'],['pos','যোগ বেশি'],['neg','বিয়োগ বেশি'],['zero','শূন্য']].map(([k, l]) =>
+          `<button class="chip ${ui.filter === k ? 'on' : ''}" onclick="setFilter('${k}')">${l}</button>`).join('')}
+      </div>
+      <select class="sort-sel" id="sortSel" aria-label="সাজান">
+        <option value="recent">সাম্প্রতিক</option><option value="name">নাম অনুযায়ী</option>
+        <option value="high">বেশি ব্যালেন্স</option><option value="low">কম ব্যালেন্স</option>
+      </select>
+    </div>` : ''}
+    <div id="plist" class="plist"></div>
+  </main>
+  <button class="fab" onclick="personSheet()">${I.plus}<span>নতুন খাতা</span></button>`;
+
+  const q = $('#q');
+  if (q) q.addEventListener('input', () => { ui.q = q.value; renderList(); });
+  const ss = $('#sortSel');
+  if (ss) { ss.value = prefs.sort; ss.addEventListener('change', () => { prefs.sort = ss.value; savePrefs(); renderList(); }); }
+  renderList();
+}
+function setFilter(f) { ui.filter = f; renderHome(); }
+
+function renderList() {
+  const el = $('#plist');
+  if (!el) return;
+  if (!db.people.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-ico">${I.users}</div>
+      <h3>এখনো কোনো খাতা নেই</h3>
+      <p>প্রত্যেক মানুষের জন্য আলাদা খাতা খুলুন — ছবি, ফোন নম্বর আর সব লেনদেন এক জায়গায় থাকবে।</p>
+      <div class="steps">
+        <div class="step"><span class="step-n">১</span><span>নিচের <b>“নতুন খাতা”</b> বাটনে চাপ দিন</span></div>
+        <div class="step"><span class="step-n">২</span><span>নাম, ফোন নম্বর আর চাইলে ছবি দিন</span></div>
+        <div class="step"><span class="step-n">৩</span><span>খাতার ভেতরে <b>+ যোগ</b> বা <b>− বিয়োগ</b> চেপে হিসাব লিখুন</span></div>
+      </div></div>`;
+    return;
+  }
+  const q = toAscii(ui.q.trim().toLowerCase());
+  let list = db.people.map(p => ({ p, s: pstats(p) }));
+  if (q) list = list.filter(({ p }) => p.name.toLowerCase().includes(q) || toAscii(p.phone).includes(q));
+  if (ui.filter === 'pos') list = list.filter(x => x.s.bal > 0);
+  if (ui.filter === 'neg') list = list.filter(x => x.s.bal < 0);
+  if (ui.filter === 'zero') list = list.filter(x => x.s.bal === 0);
+  const sorters = {
+    recent: (a, b) => Math.max(b.s.last, b.p.created) - Math.max(a.s.last, a.p.created),
+    name: (a, b) => a.p.name.localeCompare(b.p.name, 'bn'),
+    high: (a, b) => b.s.bal - a.s.bal,
+    low: (a, b) => a.s.bal - b.s.bal,
+  };
+  list.sort(sorters[prefs.sort] || sorters.recent);
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">${I.search}</div><h3>কিছু পাওয়া যায়নি</h3><p>অন্য নাম বা নম্বর দিয়ে খুঁজে দেখুন।</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(({ p, s }, i) => `
+    <button class="pcard" style="animation-delay:${Math.min(i, 12) * 25}ms" onclick="go('#/p/${p.id}')">
+      ${avatar(p)}
+      <div class="pc-body">
+        <div class="pc-name">${h(p.name)}</div>
+        <div class="pc-sub">${p.phone ? h(p.phone) + ' · ' : ''}${s.last ? 'শেষ লেনদেন ' + relDay(s.last) : 'কোনো লেনদেন নেই'}</div>
+      </div>
+      <div class="pc-right">
+        <div class="pc-bal ${cls(s.bal)}">${money(s.bal, true)}</div>
+        <div class="pc-cnt">${bnInt(s.count)}টি লেনদেন</div>
+      </div>
+    </button>`).join('');
+}
+
+// ══════════════════════════════════════
+//  PERSON PAGE — একজনের পুরো খাতা
+// ══════════════════════════════════════
+function renderPerson(p) {
+  if (ui.lastPid !== p.id) { ui.hfilter = 'all'; ui.lastPid = p.id; }
+  const s = pstats(p);
+  const tel = toAscii(p.phone).replace(/[^\d+]/g, '');
+  app.innerHTML = `
+  <header class="appbar">
+    <button class="icon-btn" onclick="goBack()" aria-label="ফিরে যান">${I.back}</button>
+    <div class="appbar-title">${h(p.name)}</div>
+    <button class="icon-btn" onclick="personMenu('${p.id}')" aria-label="আরও">${I.more}</button>
+  </header>
+  <main class="page" style="padding-bottom:120px">
+    <section class="profile">
+      <div onclick="${p.photo ? `viewPhoto('${p.id}')` : `personSheet('${p.id}')`}">${avatar(p, 'av-lg')}</div>
+      <div class="pf-name">${h(p.name)}</div>
+      ${p.phone ? `<div class="pf-phone">${h(p.phone)}</div>` : ''}
+      ${p.note ? `<div class="pf-note">${h(p.note)}</div>` : ''}
+      <div class="pf-actions">
+        ${tel ? `<a class="pf-act" href="tel:${h(tel)}"><span class="ic">${I.phone}</span>কল</a>
+                 <a class="pf-act" href="sms:${h(tel)}?body=${encodeURIComponent(reminderText(p))}"><span class="ic">${I.msg}</span>মেসেজ</a>` : ''}
+        <button class="pf-act" onclick="shareStatement('${p.id}')"><span class="ic">${I.share}</span>শেয়ার</button>
+        <button class="pf-act" onclick="personSheet('${p.id}')"><span class="ic">${I.edit}</span>এডিট</button>
+      </div>
+    </section>
+
+    <section class="balcard">
+      <div class="bc-top"><span class="bc-lbl">বর্তমান ব্যালেন্স</span><span class="bc-amt ${cls(s.bal)}">${money(s.bal)}</span></div>
+      <div class="bc-row">
+        <div class="bc-stat"><b class="pos">${money(s.tin)}</b><span>মোট যোগ</span></div>
+        <div class="bc-stat"><b class="neg">${money(s.tout)}</b><span>মোট বিয়োগ</span></div>
+        <div class="bc-stat"><b>${bnInt(s.count)}টি</b><span>লেনদেন</span></div>
+      </div>
+    </section>
+
+    ${!prefs.tipTx && p.txns.length ? `<div class="tip"><span class="t-ico">${I.info}</span>
+      <span>কোনো লেনদেনে চাপ দিলে সেটা <b>এডিট</b> বা <b>মুছে</b> ফেলা যাবে। ভুল করে মুছলেও রিসাইকেল বিন থেকে ফেরত আনা যায়।</span>
+      <button class="t-x" onclick="prefs.tipTx=true;savePrefs();render()" aria-label="বন্ধ করুন">${I.close}</button></div>` : ''}
+
+    <div class="sec-head">
+      <span class="sec-title">লেনদেনের ইতিহাস</span>
+      <div class="chips" style="flex:0">
+        ${[['all','সব'],['add','যোগ'],['sub','বিয়োগ']].map(([k, l]) =>
+          `<button class="chip ${ui.hfilter === k ? 'on' : ''}" onclick="ui.hfilter='${k}';render()">${l}</button>`).join('')}
+      </div>
+    </div>
+    <div id="hist">${historyHTML(p)}</div>
+  </main>
+  <div class="actbar">
+    <button class="btn btn-green btn-flex" onclick="txSheet('${p.id}', 'add')">${I.plus} যোগ করুন</button>
+    <button class="btn btn-red btn-flex" onclick="txSheet('${p.id}', 'sub')">${I.minus} বিয়োগ করুন</button>
+  </div>`;
+}
+
+function historyHTML(p) {
+  if (!p.txns.length) {
+    return `<div class="empty" style="padding-top:20px"><div class="empty-ico">${I.book}</div>
+      <h3>এই খাতায় এখনো কিছু লেখা হয়নি</h3><p>নিচের <b>যোগ করুন</b> বা <b>বিয়োগ করুন</b> বাটনে চেপে প্রথম লেনদেন লিখুন।</p></div>`;
+  }
+  // প্রতিটা লেনদেনের পরের ব্যালেন্স (পুরনো থেকে নতুন হিসাব করে)
+  const after = {};
+  let run = 0;
+  [...p.txns].reverse().forEach(t => { run = round2(run + (t.type === 'add' ? t.amount : -t.amount)); after[t.id] = run; });
+  const list = ui.hfilter === 'all' ? p.txns : p.txns.filter(t => t.type === ui.hfilter);
+  if (!list.length) return `<div class="empty" style="padding:20px"><p>এই ধরনের কোনো লেনদেন নেই।</p></div>`;
+  let out = '', lastDay = null;
+  list.forEach((t, i) => {
+    const d = dayStart(t.ts);
+    if (d !== lastDay) {
+      const rd = relDay(t.ts), fd = fmtDate(t.ts);
+      out += `<div class="day-head">${rd === fd ? fd : rd + ' · ' + fd}</div>`;
+      lastDay = d;
+    }
+    out += `<button class="tx" style="animation-delay:${Math.min(i, 12) * 20}ms" onclick="txMenu('${p.id}','${t.id}')">
+      <span class="tx-ic ${t.type}">${t.type === 'add' ? '+' : '−'}</span>
+      <div class="tx-b"><div class="tx-note">${h(t.note || (t.type === 'add' ? 'যোগ' : 'বিয়োগ'))}</div>
+        <div class="tx-meta">${fmtTime(t.ts)} · ব্যালেন্স ${money(after[t.id])}</div></div>
+      <span class="tx-amt ${t.type}">${t.type === 'add' ? '+' : '−'} ৳ ${bn(t.amount)}</span>
+    </button>`;
+  });
   return out;
 }
 
-function loadPersons() {
-  try { return normalizePersons(JSON.parse(localStorage.getItem('hk_persons') || '{}')) || {}; }
-  catch (e) { return {}; }
+function reminderText(p) {
+  const s = pstats(p);
+  return `আসসালামু আলাইকুম ${p.name}, আমাদের হিসাব অনুযায়ী আপনার খাতায় বর্তমান ব্যালেন্স ${money(s.bal)}। ধন্যবাদ।`;
 }
 
-let persons = loadPersons();
-let sel = null;
-let txType = 'add';
-let filt = 'all';
-let activeTab = 'names';
-let driveToken = null;
-let driveFileId = null;
-
-function save() {
-  try { localStorage.setItem('hk_persons', JSON.stringify(persons)); }
-  catch (e) { toast('⚠️ ফোনে সেভ করা যায়নি', 3000); }
-}
-
-// ══════════════════════════════════════
-//  FORMAT
-// ══════════════════════════════════════
-function bn(n) {
-  return Math.abs(n).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2})
-    .replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
-}
-function fmt(n) { return '৳ ' + bn(n); }
-// HTML-এ বসানোর আগে বিশেষ চিহ্ন নিরাপদ করা
-function h(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function nowStr() {
-  const d = new Date();
-  return d.toLocaleDateString('bn-BD') + ' ' + d.toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'});
+async function shareStatement(id) {
+  const p = findPerson(id);
+  if (!p) return;
+  const s = pstats(p);
+  const lines = p.txns.slice(0, 15).map(t =>
+    `${fmtDate(t.ts)}: ${t.type === 'add' ? '+' : '−'} ৳${bn(t.amount)}${t.note ? ' (' + t.note + ')' : ''}`);
+  const text = `📒 হিসাব খাতা — ${p.name}\n` +
+    `মোট যোগ: ${money(s.tin)}\nমোট বিয়োগ: ${money(s.tout)}\nবর্তমান ব্যালেন্স: ${money(s.bal)}\n` +
+    (lines.length ? `\nসাম্প্রতিক লেনদেন:\n${lines.join('\n')}` : '');
+  try {
+    if (navigator.share) { await navigator.share({ title: 'হিসাব — ' + p.name, text }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); toast('📋 হিসাব কপি হয়েছে — যেকোনো জায়গায় পেস্ট করুন'); }
+  catch (e) { toast('⚠️ শেয়ার করা যায়নি'); }
 }
 
 // ══════════════════════════════════════
-//  TABS
+//  MODAL SYSTEM (ফোনের Back বাটনে বন্ধ হয়)
 // ══════════════════════════════════════
-function tab(name) {
-  activeTab = name;
-  ['names','tx','history','drive'].forEach(t => {
-    document.getElementById('tab-'+t).classList.toggle('hidden', t !== name);
+let modal = null;
+function openModal(html, { center = false, cls = 'sheet', onClose } = {}) {
+  if (modal) dropModal();
+  $('#toast').classList.remove('show');
+  const wrap = document.createElement('div');
+  wrap.className = 'overlay' + (center ? ' center' : '');
+  wrap.innerHTML = `<div class="${cls}" role="dialog" aria-modal="true">${cls === 'sheet' ? '<div class="sheet-handle"></div>' : ''}${html}</div>`;
+  wrap.addEventListener('click', e => { if (e.target === wrap) closeModal(); });
+  document.body.appendChild(wrap);
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => wrap.classList.add('show'));
+  modal = { el: wrap, onClose };
+  history.pushState({ modal: true }, '');
+  return wrap;
+}
+function dropModal() {
+  const m = modal; modal = null;
+  if (!m) return;
+  m.el.classList.remove('show');
+  setTimeout(() => m.el.remove(), 200);
+  document.body.style.overflow = '';
+  m.onClose && m.onClose();
+  m.after && m.after();
+}
+function closeModal(after) {
+  if (!modal) { after && after(); return; }
+  modal.after = after;
+  if (history.state && history.state.modal) history.back(); else dropModal();
+}
+window.addEventListener('popstate', () => { if (modal) dropModal(); });
+
+function confirmDialog({ title, msg, ok = 'হ্যাঁ', danger = false, requireText = '' }) {
+  return new Promise(resolve => {
+    let result = false;
+    const el = openModal(`
+      <div class="dlg-ico ${danger ? 'danger' : 'info'}">${danger ? I.trash : I.info}</div>
+      <h3>${h(title)}</h3><p>${msg}</p>
+      ${requireText ? `<div class="field" style="margin-top:12px"><label>নিশ্চিত করতে লিখুন: <b style="color:var(--red)">${h(requireText)}</b></label>
+        <input class="inp" id="dlgTxt" autocomplete="off"></div>` : ''}
+      <div class="dlg-btns">
+        <button class="btn btn-soft btn-flex" data-act="no">বাতিল</button>
+        <button class="btn ${danger ? 'btn-red' : 'btn-blue'} btn-flex" data-act="yes" ${requireText ? 'disabled' : ''}>${h(ok)}</button>
+      </div>`, { center: true, cls: 'dialog', onClose: () => resolve(result) });
+    const yes = el.querySelector('[data-act=yes]');
+    el.querySelector('[data-act=no]').onclick = () => closeModal();
+    yes.onclick = () => { result = true; closeModal(); };
+    if (requireText) {
+      const inp = el.querySelector('#dlgTxt');
+      inp.addEventListener('input', () => { yes.disabled = inp.value.trim() !== requireText; });
+      setTimeout(() => inp.focus(), 250);
+    }
   });
-  document.querySelectorAll('.tab').forEach((el,i) => {
-    el.classList.toggle('active', ['names','tx','history','drive'][i] === name);
-  });
-  if (name === 'tx') renderTx();
-  if (name === 'history') renderHistory();
 }
 
 // ══════════════════════════════════════
-//  PERSONS
+//  TOAST (Undo সহ)
 // ══════════════════════════════════════
-function addPerson() {
-  const inp = document.getElementById('nameInp');
-  const name = inp.value.trim();
-  if (!name) return;
-  if (BAD_NAMES.includes(name)) { toast('⚠️ এই নামটি ব্যবহার করা যাবে না'); return; }
-  if (!own(persons, name)) persons[name] = { total:0, txns:[] };
-  inp.value = '';
-  save();
-  selectPerson(name);
-  renderChips();
-}
-document.getElementById('nameInp').addEventListener('keydown', e => { if(e.key==='Enter') addPerson(); });
-
-function selectPerson(name) {
-  sel = name;
-  renderChips();
-  tab('tx');
-}
-
-function delPerson(name) {
-  if (!confirm(`"${name}" মুছে ফেলবেন?`)) return;
-  delete persons[name];
-  if (sel === name) sel = null;
-  save(); updateBal(); renderChips(); renderTx();
-}
-
-function renderChips() {
-  const el = document.getElementById('chips');
-  const keys = Object.keys(persons);
-  if (!keys.length) { el.innerHTML='<span style="color:var(--dim);font-size:0.82rem">কোনো নাম নেই এখনো</span>'; return; }
-  el.innerHTML = keys.map(n => {
-    const t = persons[n].total;
-    const col = t>0?'color:var(--green)':t<0?'color:var(--red)':'';
-    return `<div class="chip ${sel===n?'active':''}" data-name="${h(n)}" onclick="selectPerson(this.dataset.name)">
-      <span>${h(n)}</span>
-      <span class="chip-amt" style="${col}">${t<0?'- ':''}${fmt(t)}</span>
-      <span class="chip-x" onclick="event.stopPropagation();delPerson(this.parentElement.dataset.name)">✕</span>
-    </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════
-//  TRANSACTION
-// ══════════════════════════════════════
-function renderTx() {
-  const el = document.getElementById('txCard');
-  if (!sel || !own(persons, sel)) { el.innerHTML='<div class="no-sel">👈 আগে "নাম" ট্যাব থেকে একটি নাম বেছে নিন</div>'; return; }
-  const t = persons[sel].total;
-  const col = t>0?'var(--green)':t<0?'var(--red)':'var(--muted)';
-  el.innerHTML = `
-    <div class="sel-info">
-      <span class="sel-name">📋 ${h(sel)}</span>
-      <span class="sel-bal" style="color:${col}">${t<0?'- ':''}${fmt(t)}</span>
-    </div>
-    <div class="type-toggle">
-      <button class="type-btn add ${txType==='add'?'on':''}" onclick="setType('add')">＋ যোগ করুন</button>
-      <button class="type-btn sub ${txType==='sub'?'on':''}" onclick="setType('sub')">－ বিয়োগ করুন</button>
-    </div>
-    <div style="margin-bottom:9px">
-      <input type="number" id="amtInp" placeholder="পরিমাণ লিখুন..." min="0" step="any" inputmode="decimal">
-    </div>
-    <div style="margin-bottom:12px">
-      <input type="text" id="noteInp" placeholder="নোট (ঐচ্ছিক)..." maxlength="60">
-    </div>
-    <button class="btn btn-full ${txType==='add'?'btn-green':'btn-red'}" onclick="addTx()">
-      ${txType==='add'?'＋ যোগ করুন':'－ বিয়োগ করুন'}
-    </button>`;
-  document.getElementById('amtInp').addEventListener('keydown', e => { if(e.key==='Enter') addTx(); });
-}
-
-function setType(t) { txType=t; renderTx(); }
-
-function addTx() {
-  const aEl = document.getElementById('amtInp');
-  const nEl = document.getElementById('noteInp');
-  const amt = parseFloat(aEl.value);
-  if (!sel || !own(persons, sel)) return;
-  if (!Number.isFinite(amt) || amt<=0) { aEl.style.borderColor='var(--red)'; setTimeout(()=>aEl.style.borderColor='',800); return; }
-  const note = nEl.value.trim() || (txType==='add'?'যোগ':'বিয়োগ');
-  persons[sel].txns.unshift({ type:txType, amount:amt, note, person:sel, time:nowStr(), id:Date.now() });
-  persons[sel].total = round2(persons[sel].total + (txType==='add'?amt:-amt));
-  aEl.value=''; nEl.value='';
-  save(); updateBal(); renderChips(); renderTx();
-  toast(txType==='add'?'✅ যোগ হয়েছে':'🔻 বিয়োগ হয়েছে');
-}
-
-// ══════════════════════════════════════
-//  HISTORY
-// ══════════════════════════════════════
-function filter(f, btn) {
-  filt = f;
-  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
-  btn.classList.add('on');
-  renderHistory();
-}
-
-function renderHistory() {
-  const el = document.getElementById('txList');
-  let all = [];
-  for (const n in persons) all = all.concat(persons[n].txns);
-  all.sort((a,b)=>b.id-a.id);
-  if (filt!=='all') all = all.filter(t=>t.type===filt);
-  if (!all.length) { el.innerHTML='<div class="empty">এখনো কোনো লেনদেন হয়নি</div>'; return; }
-  el.innerHTML = all.map(tx=>`
-    <div class="tx-item">
-      <div class="tx-dot ${tx.type}"></div>
-      <div class="tx-body">
-        <div class="tx-who">${h(tx.person)}</div>
-        <div class="tx-note">${h(tx.note)}</div>
-        <div class="tx-time">${h(tx.time)}</div>
-      </div>
-      <div class="tx-amt ${tx.type}">${tx.type==='add'?'+':'-'} ${fmt(tx.amount)}</div>
-      <button class="tx-del" data-person="${h(tx.person)}" data-id="${tx.id}" onclick="delTx(this.dataset.person, +this.dataset.id)">✕</button>
-    </div>`).join('');
-}
-
-function delTx(person, id) {
-  if (!own(persons, person)) return;
-  const p = persons[person];
-  const i = p.txns.findIndex(t=>t.id===id);
-  if (i===-1) return;
-  const tx = p.txns[i];
-  p.total = round2(p.total - (tx.type==='add'?tx.amount:-tx.amount));
-  p.txns.splice(i,1);
-  save(); updateBal(); renderChips(); renderTx(); renderHistory();
-}
-
-function clearAll() {
-  if (!confirm('সব লেনদেন মুছে ফেলবেন?')) return;
-  for (const n in persons) { persons[n].txns=[]; persons[n].total=0; }
-  save(); updateBal(); renderChips(); renderTx(); renderHistory();
-}
-
-// ══════════════════════════════════════
-//  BALANCE
-// ══════════════════════════════════════
-function updateBal() {
-  let tin=0, tout=0, cnt=0;
-  for (const n in persons) persons[n].txns.forEach(t=>{ if(t.type==='add')tin+=t.amount; else tout+=t.amount; cnt++; });
-  const net = round2(tin-tout);
-  const el = document.getElementById('balAmt');
-  el.textContent = (net<0?'- ':'')+fmt(net);
-  el.className = 'bal-amount '+(net>0?'pos':net<0?'neg':'zero');
-  document.getElementById('totalIn').textContent = fmt(tin);
-  document.getElementById('totalOut').textContent = fmt(tout);
-  document.getElementById('txCount').textContent = bn(cnt);
-}
-
-// ══════════════════════════════════════
-//  TOAST
-// ══════════════════════════════════════
-function toast(msg, dur=2000) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
+let toastTimer;
+function toast(msg, { action, onAction, dur = 2400 } = {}) {
+  const el = $('#toast');
+  el.innerHTML = `<span>${h(msg)}</span>${action ? `<button>${h(action)}</button>` : ''}`;
+  if (action) el.querySelector('button').onclick = () => { el.classList.remove('show'); clearTimeout(toastTimer); onAction(); };
   el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), dur);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), action ? Math.max(dur, 6000) : dur);
+}
+
+// ══════════════════════════════════════
+//  PERSON ADD / EDIT
+// ══════════════════════════════════════
+function readPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const S = 240, c = document.createElement('canvas');
+      c.width = c.height = S;
+      const m = Math.min(img.width, img.height);
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, S, S);
+      ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img')); };
+    img.src = url;
+  });
+}
+
+function personSheet(id) {
+  const p = id ? findPerson(id) : null;
+  let photo = p ? p.photo : '';
+  const el = openModal(`
+    <h3>${p ? 'খাতার তথ্য এডিট করুন' : 'নতুন খাতা খুলুন'}</h3>
+    <div class="photo-pick">
+      <div id="ppAv"></div>
+      <div class="pp-btns">
+        <button class="link-btn" id="ppPick" style="display:flex;align-items:center;gap:6px"></button>
+        <button class="link-btn red" id="ppDel">ছবি সরান</button>
+      </div>
+      <input type="file" id="ppFile" accept="image/*" class="hidden">
+    </div>
+    <div class="field"><label>নাম *</label><input class="inp" id="pName" maxlength="40" placeholder="যেমন: রহিম মিয়া" value="${h(p ? p.name : '')}"><div class="hint hidden" id="pDup"></div></div>
+    <div class="field"><label>ফোন নম্বর</label><input class="inp" id="pPhone" type="tel" maxlength="20" placeholder="০১৭XXXXXXXX" value="${h(p ? p.phone : '')}"></div>
+    <div class="field"><label>ঠিকানা / নোট</label><input class="inp" id="pNote" maxlength="120" placeholder="যেমন: বাজার রোড, মুদি দোকান" value="${h(p ? p.note : '')}"></div>
+    <button class="btn btn-blue btn-full" id="pSave">${p ? 'সেভ করুন' : 'খাতা খুলুন'}</button>`);
+
+  const nameEl = el.querySelector('#pName');
+  const drawAv = () => {
+    el.querySelector('#ppAv').innerHTML = avatar({ name: nameEl.value.trim() || '?', photo });
+    el.querySelector('#ppPick').innerHTML = I.camera.replace('width="20" height="20"', 'width="16" height="16"') + (photo ? 'ছবি বদলান' : 'ছবি যোগ করুন');
+    el.querySelector('#ppDel').classList.toggle('hidden', !photo);
+  };
+  drawAv();
+  const file = el.querySelector('#ppFile');
+  el.querySelector('#ppPick').onclick = () => file.click();
+  el.querySelector('#ppAv').onclick = () => file.click();
+  el.querySelector('#ppDel').onclick = () => { photo = ''; drawAv(); };
+  file.onchange = async () => {
+    if (!file.files[0]) return;
+    try { photo = await readPhoto(file.files[0]); drawAv(); }
+    catch (e) { toast('⚠️ ছবিটা খোলা যায়নি'); }
+    file.value = '';
+  };
+  nameEl.addEventListener('input', () => {
+    const n = nameEl.value.trim().toLowerCase();
+    const dup = n && db.people.find(x => x.name.toLowerCase() === n && x !== p);
+    const hint = el.querySelector('#pDup');
+    hint.textContent = dup ? 'ℹ️ এই নামে আগে থেকেই একটা খাতা আছে — আলাদা করতে ফোন নম্বর দিন।' : '';
+    hint.classList.toggle('hidden', !dup);
+    if (!photo) drawAv();
+  });
+  if (!p) setTimeout(() => nameEl.focus(), 250);
+
+  el.querySelector('#pSave').onclick = () => {
+    const name = nameEl.value.trim();
+    if (!name) { nameEl.classList.remove('err'); void nameEl.offsetWidth; nameEl.classList.add('err'); nameEl.focus(); return; }
+    const phone = el.querySelector('#pPhone').value.trim();
+    const note = el.querySelector('#pNote').value.trim();
+    let target = p;
+    if (p) Object.assign(p, { name, phone, note, photo });
+    else { target = { id: uid(), name, phone, note, photo, created: Date.now(), txns: [] }; db.people.push(target); }
+    if (!save()) return;
+    closeModal(() => {
+      if (p) { render(); toast('✅ তথ্য আপডেট হয়েছে'); }
+      else { go('#/p/' + target.id); toast('📒 নতুন খাতা খোলা হয়েছে'); }
+    });
+  };
+}
+
+function viewPhoto(id) {
+  const p = findPerson(id);
+  if (!p || !p.photo) return;
+  const el = openModal(`<img class="photo-view" src="${h(p.photo)}" alt="${h(p.name)}">`, { center: true, cls: 'pv' });
+  el.querySelector('.pv').onclick = () => closeModal();
+}
+
+function personMenu(id) {
+  const p = findPerson(id);
+  if (!p) return;
+  const el = openModal(`
+    <div class="alist">
+      <button class="aitem" data-a="edit"><span class="ic">${I.edit}</span>খাতার তথ্য এডিট করুন</button>
+      <button class="aitem" data-a="share"><span class="ic">${I.share}</span>হিসাব শেয়ার করুন</button>
+      <button class="aitem danger" data-a="del"><span class="ic">${I.trash}</span>পুরো খাতা মুছুন</button>
+    </div>`);
+  el.querySelector('[data-a=edit]').onclick = () => closeModal(() => personSheet(id));
+  el.querySelector('[data-a=share]').onclick = () => closeModal(() => shareStatement(id));
+  el.querySelector('[data-a=del]').onclick = () => closeModal(() => deletePerson(id));
+}
+
+async function deletePerson(id) {
+  const p = findPerson(id);
+  if (!p) return;
+  const n = p.txns.length;
+  const ok = await confirmDialog({
+    title: `"${p.name}"-এর খাতা মুছবেন?`,
+    msg: `এই খাতার ${bnInt(n)}টি লেনদেনসহ সবকিছু <b>রিসাইকেল বিনে</b> চলে যাবে। ${bnInt(TRASH_DAYS)} দিনের মধ্যে সেখান থেকে ফেরত আনা যাবে।`,
+    ok: 'হ্যাঁ, মুছুন', danger: true,
+  });
+  if (!ok) return;
+  db.people = db.people.filter(x => x !== p);
+  const entry = { id: uid(), kind: 'person', deletedAt: Date.now(), person: p };
+  db.trash.unshift(entry);
+  save();
+  goBack();
+  toast(`🗑 "${p.name}"-এর খাতা মুছে গেছে`, { action: 'ফিরিয়ে আনুন', onAction: () => { if (restoreEntry(entry.id)) go('#/p/' + p.id); } });
+}
+
+// ══════════════════════════════════════
+//  TRANSACTIONS
+// ══════════════════════════════════════
+function txSheet(pid, type, txId) {
+  const p = findPerson(pid);
+  if (!p) return;
+  const tx = txId ? p.txns.find(t => t.id === txId) : null;
+  let tp = tx ? tx.type : type;
+  const today = isoDate(Date.now());
+  const el = openModal(`
+    <h3>${tx ? 'লেনদেন এডিট করুন' : h(p.name) + '-এর খাতায় লিখুন'}</h3>
+    <div class="type-toggle">
+      <button class="add" data-t="add">＋ যোগ</button>
+      <button class="sub" data-t="sub">－ বিয়োগ</button>
+    </div>
+    <div class="field">
+      <input class="inp inp-amt" id="tAmt" inputmode="decimal" placeholder="৳ ০" value="${tx ? tx.amount : ''}" autocomplete="off">
+      <div class="quick">${[50, 100, 500, 1000, 5000].map(v => `<button data-q="${v}">+${bn(v)}</button>`).join('')}</div>
+    </div>
+    <div class="field"><label>নোট (কী জন্য)</label><input class="inp" id="tNote" maxlength="100" placeholder="যেমন: চাল ১০ কেজি, নগদ ফেরত" value="${h(tx ? tx.note : '')}"></div>
+    <div class="field"><label>তারিখ</label><input class="inp" id="tDate" type="date" max="${today}" value="${tx ? isoDate(tx.ts) : today}"></div>
+    <button class="btn btn-full" id="tSave"></button>`);
+
+  const amt = el.querySelector('#tAmt');
+  const saveBtn = el.querySelector('#tSave');
+  const paint = () => {
+    el.querySelectorAll('.type-toggle button').forEach(b => b.classList.toggle('on', b.dataset.t === tp));
+    saveBtn.className = 'btn btn-full ' + (tp === 'add' ? 'btn-green' : 'btn-red');
+    saveBtn.textContent = tx ? 'পরিবর্তন সেভ করুন' : (tp === 'add' ? '＋ যোগ করুন' : '－ বিয়োগ করুন');
+  };
+  paint();
+  el.querySelectorAll('.type-toggle button').forEach(b => b.onclick = () => { tp = b.dataset.t; paint(); });
+  el.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
+    const cur = parseFloat(toAscii(amt.value).replace(/,/g, '')) || 0;
+    amt.value = round2(cur + +b.dataset.q);
+  });
+  if (!tx) setTimeout(() => amt.focus(), 250);
+  amt.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
+
+  saveBtn.onclick = () => {
+    const v = round2(parseFloat(toAscii(amt.value).replace(/[,\s৳]/g, '')));
+    if (!Number.isFinite(v) || v <= 0) { amt.classList.remove('err'); void amt.offsetWidth; amt.classList.add('err'); amt.focus(); return; }
+    const note = el.querySelector('#tNote').value.trim();
+    const dv = el.querySelector('#tDate').value || today;
+    let ts;
+    if (tx && dv === isoDate(tx.ts)) ts = tx.ts;
+    else if (dv === today) ts = Date.now();
+    else { const [y, m, d] = dv.split('-').map(Number); ts = new Date(y, m - 1, d, 12, 0).getTime(); }
+    if (tx) Object.assign(tx, { type: tp, amount: v, note, ts });
+    else p.txns.push({ id: uid(), type: tp, amount: v, note, ts });
+    sortTx(p);
+    if (!save()) return;
+    closeModal(() => {
+      render();
+      toast(tx ? '✅ লেনদেন আপডেট হয়েছে' : (tp === 'add' ? `✅ ৳ ${bn(v)} যোগ হয়েছে` : `🔻 ৳ ${bn(v)} বিয়োগ হয়েছে`));
+    });
+  };
+}
+
+function txMenu(pid, txId) {
+  const p = findPerson(pid);
+  const t = p && p.txns.find(x => x.id === txId);
+  if (!t) return;
+  const el = openModal(`
+    <div class="asum">
+      <b class="${t.type === 'add' ? 'pos' : 'neg'}">${t.type === 'add' ? '+' : '−'} ৳ ${bn(t.amount)}</b>
+      <div>${h(t.note || (t.type === 'add' ? 'যোগ' : 'বিয়োগ'))}</div>
+      <div>${fmtDate(t.ts)}, ${fmtTime(t.ts)}</div>
+    </div>
+    <div class="alist">
+      <button class="aitem" data-a="edit"><span class="ic">${I.edit}</span>এডিট করুন</button>
+      <button class="aitem danger" data-a="del"><span class="ic">${I.trash}</span>মুছে ফেলুন</button>
+    </div>`);
+  el.querySelector('[data-a=edit]').onclick = () => closeModal(() => txSheet(pid, t.type, txId));
+  el.querySelector('[data-a=del]').onclick = () => closeModal(() => deleteTx(pid, txId));
+}
+
+async function deleteTx(pid, txId) {
+  const p = findPerson(pid);
+  const t = p && p.txns.find(x => x.id === txId);
+  if (!t) return;
+  const ok = await confirmDialog({
+    title: 'লেনদেনটা মুছবেন?',
+    msg: `<b>${t.type === 'add' ? '+' : '−'} ৳ ${bn(t.amount)}</b> ${t.note ? '(' + h(t.note) + ')' : ''} — ${fmtDate(t.ts)}।<br>এটা রিসাইকেল বিনে যাবে, পরে ফেরত আনা যাবে।`,
+    ok: 'মুছুন', danger: true,
+  });
+  if (!ok) return;
+  p.txns = p.txns.filter(x => x !== t);
+  const entry = { id: uid(), kind: 'tx', deletedAt: Date.now(), personId: p.id, personName: p.name, tx: t };
+  db.trash.unshift(entry);
+  save(); render();
+  toast('🗑 লেনদেন মুছে গেছে', { action: 'ফিরিয়ে আনুন', onAction: () => { if (restoreEntry(entry.id)) render(); } });
+}
+
+// ══════════════════════════════════════
+//  RECYCLE BIN
+// ══════════════════════════════════════
+function restoreEntry(entryId) {
+  const i = db.trash.findIndex(e => e.id === entryId);
+  if (i < 0) return false;
+  const e = db.trash[i];
+  if (e.kind === 'person') {
+    if (findPerson(e.person.id)) e.person.id = uid();
+    db.people.push(e.person);
+  } else {
+    const p = findPerson(e.personId);
+    if (!p) { toast(`⚠️ আগে "${e.personName}"-এর খাতা বিন থেকে ফেরত আনুন`, { dur: 3500 }); return false; }
+    if (p.txns.some(t => t.id === e.tx.id)) e.tx.id = uid();
+    p.txns.push(e.tx); sortTx(p);
+  }
+  db.trash.splice(i, 1);
+  save();
+  toast('♻️ ফেরত আনা হয়েছে');
+  return true;
+}
+
+function renderTrash() {
+  purgeTrash();
+  const left = e => Math.max(0, Math.ceil((e.deletedAt + TRASH_DAYS * DAY - Date.now()) / DAY));
+  app.innerHTML = `
+  <header class="appbar">
+    <button class="icon-btn" onclick="goBack()" aria-label="ফিরে যান">${I.back}</button>
+    <div class="appbar-title">রিসাইকেল বিন</div>
+    ${db.trash.length ? `<button class="icon-btn" style="color:var(--red)" onclick="emptyTrash()" aria-label="বিন খালি করুন">${I.trash}</button>` : ''}
+  </header>
+  <main class="page">
+    <div class="tip" style="margin:0 0 14px"><span class="t-ico">${I.info}</span>
+      <span>মুছে ফেলা খাতা ও লেনদেন এখানে <b>${bnInt(TRASH_DAYS)} দিন</b> থাকে। এর মধ্যে <b>ফেরত আনুন</b> চাপলে আগের জায়গায় ফিরে যাবে।</span></div>
+    ${db.trash.length ? db.trash.map(e => {
+      const isP = e.kind === 'person';
+      const title = isP ? e.person.name : `${e.tx.type === 'add' ? '+' : '−'} ৳ ${bn(e.tx.amount)} · ${e.personName}`;
+      const sub = isP ? `পুরো খাতা · ${bnInt(e.person.txns.length)}টি লেনদেন` : (e.tx.note || 'লেনদেন') + ' · ' + fmtDate(e.tx.ts);
+      return `<div class="trow">
+        ${isP ? avatar(e.person) : `<span class="tx-ic ${e.tx.type}">${e.tx.type === 'add' ? '+' : '−'}</span>`}
+        <div class="ri-b"><div class="ri-t">${h(title)}</div><div class="ri-s">${h(sub)}</div>
+          <div class="ri-s" style="color:var(--dim)">${relDay(e.deletedAt)} মুছেছেন · আর ${bnInt(left(e))} দিন থাকবে</div></div>
+        <button class="tbtn c-blue" onclick="if(restoreEntry('${e.id}'))render()">ফেরত আনুন</button>
+        <button class="icon-btn" style="width:34px;height:34px;color:var(--red)" onclick="purgeOne('${e.id}')" aria-label="চিরতরে মুছুন">${I.close}</button>
+      </div>`;
+    }).join('') : `<div class="empty"><div class="empty-ico">${I.trash}</div><h3>বিন খালি</h3><p>কিছু মুছলে সেটা এখানে আসবে।</p></div>`}
+  </main>`;
+}
+
+async function purgeOne(id) {
+  const ok = await confirmDialog({ title: 'চিরতরে মুছবেন?', msg: 'এটা আর কখনো ফেরত আনা যাবে না।', ok: 'চিরতরে মুছুন', danger: true });
+  if (!ok) return;
+  db.trash = db.trash.filter(e => e.id !== id);
+  save(); render();
+}
+async function emptyTrash() {
+  const ok = await confirmDialog({ title: 'বিন খালি করবেন?', msg: `বিনের ${bnInt(db.trash.length)}টি জিনিস চিরতরে মুছে যাবে, আর ফেরত আনা যাবে না।`, ok: 'খালি করুন', danger: true });
+  if (!ok) return;
+  db.trash = [];
+  save(); render();
+  toast('বিন খালি করা হয়েছে');
+}
+
+// ══════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════
+function renderSettings() {
+  const t = totals();
+  const light = prefs.theme === 'light';
+  app.innerHTML = `
+  <header class="appbar">
+    <button class="icon-btn" onclick="goBack()" aria-label="ফিরে যান">${I.back}</button>
+    <div class="appbar-title">সেটিংস</div>
+  </header>
+  <main class="page">
+    <div class="group">
+      <div class="group-title">ব্যাকআপ — ফোন হারালেও হিসাব থাকবে</div>
+      <div class="gcard">
+        <div class="drive-box">${driveHTML()}</div>
+        <button class="row-item" onclick="exportFile()"><span class="ri-ic c-green">${I.download}</span>
+          <div class="ri-b"><div class="ri-t">ফাইলে ব্যাকআপ নিন</div><div class="ri-s">ফোনে একটা ব্যাকআপ ফাইল সেভ হবে</div></div></button>
+        <button class="row-item" onclick="$('#fileImport').click()"><span class="ri-ic c-gold">${I.upload}</span>
+          <div class="ri-b"><div class="ri-t">ব্যাকআপ ফাইল থেকে ফেরত আনুন</div><div class="ri-s">আগে সেভ করা .json ফাইল বেছে নিন</div></div></button>
+      </div>
+      <div class="ri-s" style="margin:8px 6px 0">${prefs.lastBackup ? 'শেষ ব্যাকআপ: ' + relDay(prefs.lastBackup) + ', ' + fmtTime(prefs.lastBackup) : 'এখনো কোনো ব্যাকআপ নেওয়া হয়নি'}</div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">অ্যাপ</div>
+      <div class="gcard">
+        <button class="row-item" onclick="toggleTheme()"><span class="ri-ic c-blue">${I.moon}</span>
+          <div class="ri-b"><div class="ri-t">লাইট মোড</div><div class="ri-s">দিনের আলোয় পড়তে সুবিধা</div></div>
+          <span class="switch ${light ? 'on' : ''}"></span></button>
+        <button class="row-item" onclick="go('#/trash')"><span class="ri-ic c-red">${I.trash}</span>
+          <div class="ri-b"><div class="ri-t">রিসাইকেল বিন</div><div class="ri-s">মুছে ফেলা জিনিস ফেরত আনুন</div></div>
+          <span class="ri-end">${bnInt(db.trash.length)}টি</span>${I.chev}</button>
+        <button class="row-item" onclick="go('#/help')"><span class="ri-ic c-green">${I.help}</span>
+          <div class="ri-b"><div class="ri-t">নির্দেশিকা</div><div class="ri-s">কীভাবে ব্যবহার করবেন</div></div>${I.chev}</button>
+        <button class="row-item" onclick="showOnboarding()"><span class="ri-ic c-gold">${I.book}</span>
+          <div class="ri-b"><div class="ri-t">শুরুর পরিচিতি আবার দেখুন</div></div>${I.chev}</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">বিপজ্জনক জায়গা</div>
+      <div class="gcard">
+        <button class="row-item" onclick="deleteAll()" ${db.people.length ? '' : 'disabled style="opacity:.5"'}><span class="ri-ic c-red">${I.alert}</span>
+          <div class="ri-b"><div class="ri-t" style="color:var(--red)">সব খাতা মুছুন</div><div class="ri-s">${bnInt(db.people.length)}টি খাতা, ${bnInt(t.count)}টি লেনদেন বিনে যাবে</div></div></button>
+      </div>
+    </div>
+    <div class="ri-s" style="text-align:center;margin-top:20px">হিসাব খাতা · ভার্সন ${bnInt(APP_VERSION)}</div>
+  </main>`;
+}
+
+function toggleTheme() {
+  prefs.theme = prefs.theme === 'light' ? 'dark' : 'light';
+  savePrefs(); applyTheme(); render();
+}
+function applyTheme() {
+  document.documentElement.dataset.theme = prefs.theme;
+  document.querySelector('meta[name=theme-color]').content = prefs.theme === 'light' ? '#f2f5fa' : '#0b0f19';
+}
+
+async function deleteAll() {
+  if (!db.people.length) return;
+  const ok = await confirmDialog({
+    title: 'সব খাতা মুছবেন?',
+    msg: `${bnInt(db.people.length)}টি খাতার সব হিসাব রিসাইকেল বিনে যাবে (${bnInt(TRASH_DAYS)} দিন থাকবে)। নিশ্চিত হলে নিচে লিখুন।`,
+    ok: 'সব মুছুন', danger: true, requireText: 'মুছে ফেলুন',
+  });
+  if (!ok) return;
+  const now = Date.now();
+  db.people.forEach(p => db.trash.unshift({ id: uid(), kind: 'person', deletedAt: now, person: p }));
+  db.people = [];
+  save(); render();
+  toast('🗑 সব খাতা বিনে পাঠানো হয়েছে');
+}
+
+// ── ফাইলে ব্যাকআপ ──
+function backupPayload() {
+  return JSON.stringify({ app: 'hisab-khata', version: 2, people: db.people, trash: db.trash, exportTime: new Date().toISOString() });
+}
+function markBackup() { prefs.lastBackup = Date.now(); prefs.snoozeBackup = 0; savePrefs(); }
+
+function exportFile() {
+  const blob = new Blob([backupPayload()], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `hisab-khata-backup-${isoDate(Date.now())}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  markBackup(); render();
+  toast('✅ ব্যাকআপ ফাইল ডাউনলোড হয়েছে');
+}
+
+async function replaceData(clean, sourceLabel) {
+  const cnt = clean.people.reduce((s, p) => s + p.txns.length, 0);
+  const ok = await confirmDialog({
+    title: 'ব্যাকআপ থেকে ফেরত আনবেন?',
+    msg: `${sourceLabel}-এ <b>${bnInt(clean.people.length)}টি খাতা, ${bnInt(cnt)}টি লেনদেন</b> আছে। এগুলো দিয়ে এই ফোনের বর্তমান হিসাব বদলে যাবে।`,
+    ok: 'হ্যাঁ, ফেরত আনুন',
+  });
+  if (!ok) return false;
+  try { localStorage.setItem(LS_SNAPSHOT, JSON.stringify({ version: 2, people: db.people, trash: db.trash, savedAt: Date.now() })); } catch (e) {}
+  db = clean;
+  purgeTrash(); save(); render();
+  return true;
+}
+
+$('#fileImport').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  let clean = null;
+  try { clean = normalizeData(JSON.parse(await f.text())); } catch (err) {}
+  if (!clean) { toast('❌ এটা হিসাব খাতার ব্যাকআপ ফাইল না', { dur: 3000 }); return; }
+  if (await replaceData(clean, 'ফাইলটি')) toast('✅ ব্যাকআপ থেকে ফেরত আনা হয়েছে');
+});
+
+// ══════════════════════════════════════
+//  HELP — নির্দেশিকা
+// ══════════════════════════════════════
+const HELP = [
+  [I.users, 'c-blue', 'নতুন খাতা খোলা', `
+    <ul><li>হোম পেজের নিচে <b>“নতুন খাতা”</b> বাটনে চাপ দিন।</li>
+    <li>নাম লিখুন (জরুরি)। চাইলে <b>ফোন নম্বর</b>, <b>ঠিকানা</b> আর <b>ছবি</b> দিন — ছবিতে চাপ দিয়ে ক্যামেরা বা গ্যালারি থেকে নেওয়া যায়।</li>
+    <li>একই নামে দুজন থাকলে ফোন নম্বর দিয়ে আলাদা করুন।</li></ul>`],
+  [I.plus, 'c-green', 'যোগ (+) ও বিয়োগ (−) মানে কী?', `
+    <p><b>যোগ</b> করলে ওই মানুষের ব্যালেন্স বাড়ে, <b>বিয়োগ</b> করলে কমে।</p>
+    <p style="margin-top:6px">একটা নিয়ম ঠিক করে নিন, যেমন দোকানের বাকির হিসাবে:</p>
+    <ul><li>কাউকে বাকিতে মাল দিলে → <b>যোগ</b></li><li>সে টাকা শোধ করলে → <b>বিয়োগ</b></li></ul>
+    <p style="margin-top:6px">তাহলে ব্যালেন্স সবুজ (+) মানে সে আপনাকে টাকা দেবে, লাল (−) মানে আপনি তাকে দেবেন।</p>`],
+  [I.book, 'c-gold', 'লেনদেন লেখা', `
+    <ul><li>কারো খাতা খুলুন → নিচে <b>যোগ করুন</b> বা <b>বিয়োগ করুন</b> চাপুন।</li>
+    <li>টাকার পরিমাণ লিখুন — <b>+১০০, +৫০০</b> বাটন চেপে দ্রুত লেখা যায়।</li>
+    <li>নোটে কী জন্য লিখে রাখুন (যেমন “চাল ১০ কেজি”), পরে খুঁজতে সুবিধা।</li>
+    <li>পুরনো তারিখের হিসাব হলে <b>তারিখ</b> বদলে দিন।</li></ul>`],
+  [I.edit, 'c-blue', 'ভুল হলে এডিট করা', `
+    <ul><li>হিস্ট্রিতে যেকোনো লেনদেনে চাপ দিন → <b>এডিট করুন</b>।</li>
+    <li>খাতার নাম, ফোন বা ছবি বদলাতে খাতার ভেতরে <b>এডিট</b> বাটন চাপুন।</li></ul>`],
+  [I.shield, 'c-red', 'ভুল করে মুছে ফেললে?', `
+    <ul><li>কিছু মোছার আগে অ্যাপ সবসময় <b>নিশ্চিত হতে জিজ্ঞেস করে</b>।</li>
+    <li>মোছার পর নিচে কয়েক সেকেন্ড <b>“ফিরিয়ে আনুন”</b> বাটন থাকে — চাপলেই আগের মতো।</li>
+    <li>মুছে ফেলা সবকিছু <b>রিসাইকেল বিনে ${bnInt(TRASH_DAYS)} দিন</b> থাকে (সেটিংস → রিসাইকেল বিন)।</li>
+    <li>“সব খাতা মুছুন” করতে হলে আলাদা করে লিখে নিশ্চিত করতে হয়, তাই হঠাৎ চাপ লেগে সব মুছবে না।</li></ul>`],
+  [I.search, 'c-green', 'খোঁজা ও সাজানো', `
+    <ul><li>হোম পেজের সার্চ বক্সে নাম বা ফোন নম্বরের অংশ লিখুন।</li>
+    <li><b>যোগ বেশি / বিয়োগ বেশি / শূন্য</b> বাটনে চেপে ছেঁকে দেখুন।</li>
+    <li>ডান পাশের মেনু থেকে নাম বা ব্যালেন্স অনুযায়ী সাজান।</li></ul>`],
+  [I.share, 'c-gold', 'হিসাব পাঠানো, কল ও মেসেজ', `
+    <ul><li>খাতার ভেতরে <b>শেয়ার</b> চাপলে পুরো হিসাব লেখা আকারে WhatsApp, Messenger বা SMS-এ পাঠানো যায়।</li>
+    <li>ফোন নম্বর দেওয়া থাকলে <b>কল</b> ও <b>মেসেজ</b> বাটন দেখাবে — মেসেজে ব্যালেন্সের কথা আগে থেকেই লেখা থাকবে।</li></ul>`],
+  [I.cloud, 'c-blue', 'ব্যাকআপ — খুবই জরুরি!', `
+    <p>সব হিসাব শুধু এই ফোনেই থাকে। ফোন হারালে, নষ্ট হলে বা ব্রাউজারের ডেটা মুছলে হিসাবও হারাবে।</p>
+    <ul><li><b>Google Drive:</b> সেটিংস → Drive সংযোগ → <b>আপলোড</b>। নতুন ফোনে একই Google অ্যাকাউন্টে ঢুকে <b>ডাউনলোড</b>।</li>
+    <li><b>ফাইল:</b> সেটিংস → “ফাইলে ব্যাকআপ নিন”। ফাইলটা নিজের কাছে বা ইমেইলে রেখে দিন।</li>
+    <li>সপ্তাহে অন্তত একবার ব্যাকআপ নিন — না নিলে অ্যাপ মনে করিয়ে দেবে।</li></ul>`],
+  [I.download, 'c-green', 'ফোনে অ্যাপের মতো ইনস্টল', `
+    <ul><li>Chrome-এ অ্যাপটা খুলে উপরের <b>⋮ মেনু → “Add to Home screen” / “Install app”</b> চাপুন।</li>
+    <li>এরপর ইন্টারনেট ছাড়াও চলবে (শুধু Drive ব্যাকআপে নেট লাগবে)।</li></ul>`],
+];
+
+function renderHelp() {
+  app.innerHTML = `
+  <header class="appbar">
+    <button class="icon-btn" onclick="goBack()" aria-label="ফিরে যান">${I.back}</button>
+    <div class="appbar-title">নির্দেশিকা</div>
+  </header>
+  <main class="page help">
+    <p style="color:var(--muted);font-size:.88rem;margin:0 4px 14px">যেকোনো প্রশ্নে চাপ দিলে উত্তর খুলবে।</p>
+    ${HELP.map(([ic, c, t, body], i) => `
+      <details ${i === 0 ? 'open' : ''}><summary><span class="ri-ic ${c}">${ic}</span>${t}<span class="chev">${I.chev}</span></summary>
+      <div class="hb">${body}</div></details>`).join('')}
+    <button class="btn btn-soft btn-full" style="margin-top:10px" onclick="showOnboarding()">${I.book} শুরুর পরিচিতি আবার দেখুন</button>
+  </main>`;
+}
+
+// ══════════════════════════════════════
+//  ONBOARDING
+// ══════════════════════════════════════
+const ONB = [
+  [I.book, 'হিসাব খাতায় স্বাগতম!', 'দোকানের বাকি, ধার-দেনা বা যেকোনো লেনদেন — সহজে লিখে রাখুন, কখনো ভুলবেন না।'],
+  [I.users, 'প্রত্যেকের আলাদা খাতা', 'প্রত্যেক মানুষের জন্য আলাদা খাতা — ছবি, ফোন নম্বর, আর তারিখ অনুযায়ী পুরো লেনদেনের হিস্ট্রি এক জায়গায়।'],
+  [I.shield, 'ভুল করে মুছবে না', 'মোছার আগে জিজ্ঞেস করে, “ফিরিয়ে আনুন” বাটন থাকে, আর মুছে ফেলা জিনিস ৩০ দিন রিসাইকেল বিনে থাকে।'],
+  [I.cloud, 'নিয়মিত ব্যাকআপ নিন', 'সেটিংস থেকে Google Drive বা ফাইলে ব্যাকআপ রাখুন — ফোন হারালেও হিসাব হারাবে না।'],
+];
+function showOnboarding() {
+  let i = 0;
+  const wrap = document.createElement('div');
+  wrap.className = 'onb';
+  const draw = () => {
+    const [ic, t, d] = ONB[i];
+    const last = i === ONB.length - 1;
+    wrap.innerHTML = `
+      <button class="onb-skip">${last ? '' : 'বাদ দিন'}</button>
+      <div class="onb-body"><div class="onb-art">${ic.replace(/width="\d+" height="\d+"/, 'width="62" height="62"')}</div><h2>${t}</h2><p>${d}</p></div>
+      <div class="onb-dots">${ONB.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div>
+      <button class="btn btn-blue btn-full">${last ? 'শুরু করুন' : 'পরের ধাপ'}</button>`;
+    wrap.querySelector('.onb-skip').onclick = finish;
+    wrap.querySelector('.btn').onclick = () => { if (last) finish(); else { i++; draw(); } };
+  };
+  const finish = () => { prefs.onboarded = true; savePrefs(); wrap.remove(); };
+  draw();
+  document.body.appendChild(wrap);
 }
 
 // ══════════════════════════════════════
@@ -667,19 +1450,19 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 const clientIdMissing = !CLIENT_ID || CLIENT_ID.startsWith('YOUR_CLIENT_ID');
 
+let driveToken = null;
+let driveFileId = null;
 let tokenClient = null;
 let tokenExpiry = 0;
 let pendingToken = null;
 let fileLookup = null;
-let driveBusy = false;
+let driveBusy = '';
+let driveNote = '';
 
 class DriveError extends Error {
   constructor(code, status) { super(code); this.code = code; this.status = status; }
 }
-
-function gsiReady() {
-  return !!(window.google && google.accounts && google.accounts.oauth2);
-}
+function gsiReady() { return !!(window.google && google.accounts && google.accounts.oauth2); }
 
 function getTokenClient() {
   if (!gsiReady()) return null;
@@ -692,19 +1475,14 @@ function getTokenClient() {
         if (!p) return;
         if (resp.error) { p.reject(new DriveError('auth')); return; }
         driveToken = resp.access_token;
-        // মেয়াদ শেষ হওয়ার ১ মিনিট আগেই নতুন টোকেন নেওয়া হবে
         tokenExpiry = Date.now() + (Number(resp.expires_in) || 3600) * 1000 - 60000;
         p.resolve(driveToken);
       },
-      error_callback: () => {
-        const p = pendingToken; pendingToken = null;
-        if (p) p.reject(new DriveError('auth'));
-      }
+      error_callback: () => { const p = pendingToken; pendingToken = null; if (p) p.reject(new DriveError('auth')); },
     });
   }
   return tokenClient;
 }
-
 function requestToken(prompt) {
   const c = getTokenClient();
   if (!c) return Promise.reject(new DriveError('gsi'));
@@ -714,27 +1492,19 @@ function requestToken(prompt) {
     c.requestAccessToken(prompt === undefined ? {} : { prompt });
   });
 }
-
-// টোকেনের মেয়াদ শেষ হলে নিজে থেকেই নতুন টোকেন নেয়
 function ensureToken() {
   if (driveToken && Date.now() < tokenExpiry) return Promise.resolve(driveToken);
   return requestToken('');
 }
-
 async function driveFetch(url, opts = {}) {
   const token = await ensureToken();
   let res;
-  try {
-    res = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + token } });
-  } catch (e) {
-    throw new DriveError('network');
-  }
+  try { res = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + token } }); }
+  catch (e) { throw new DriveError('network'); }
   if (res.status === 401) { tokenExpiry = 0; throw new DriveError('auth', 401); }
   if (!res.ok) throw new DriveError('http', res.status);
   return res;
 }
-
-// Drive-এ ফাইল খোঁজে; একসাথে একাধিকবার ডাকলেও একটাই রিকোয়েস্ট যায়
 function findFile() {
   if (driveFileId) return Promise.resolve(driveFileId);
   if (!fileLookup) {
@@ -746,7 +1516,6 @@ function findFile() {
   }
   return fileLookup;
 }
-
 function driveErrMsg(e) {
   const code = e && e.code;
   if (code === 'gsi') return '⏳ Google লোড হচ্ছে, একটু পরে আবার চেষ্টা করুন';
@@ -755,126 +1524,101 @@ function driveErrMsg(e) {
   if (code === 'bad-data') return '❌ Drive-এর ডেটা পড়া যায়নি';
   return '❌ Drive-এ সমস্যা হয়েছে' + (e && e.status ? ` (${e.status})` : '');
 }
+function refreshDrive() { if (route().page === 'settings') render(); }
 
-function setDriveSyncing(label) {
-  document.getElementById('driveBtn').className = 'drive-btn syncing';
-  document.getElementById('driveBtnTxt').textContent = label;
-}
-
-function syncTimeStr() {
-  return new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
-}
-
-function driveAction() {
-  if (driveToken) tab('drive'); else driveSignIn();
+function driveHTML() {
+  if (clientIdMissing) {
+    return `<div class="drive-st"><span class="ri-ic c-gold">${I.cloud}</span><div class="ri-b"><div class="ri-t">Google Drive</div>
+      <div class="ri-s">index.html-এর google-client-id meta ট্যাগে Client ID বসান</div></div></div>`;
+  }
+  if (!driveToken) {
+    return `<div class="drive-st"><span class="ri-ic c-blue">${I.cloud}</span><div class="ri-b"><div class="ri-t">Google Drive</div>
+      <div class="ri-s">সংযোগ করলে হিসাব অনলাইনে নিরাপদে থাকবে</div></div></div>
+      <button class="btn btn-blue btn-full ${driveBusy ? 'syncing' : ''}" onclick="driveSignIn()" ${driveBusy ? 'disabled' : ''}>${I.cloud} ${driveBusy || 'Google Drive সংযোগ করুন'}</button>`;
+  }
+  return `<div class="drive-st"><span class="ri-ic c-green">${I.cloud}</span><div class="ri-b"><div class="ri-t">Google Drive সংযুক্ত ✅</div>
+      <div class="ri-s">${h(driveNote || 'আপলোড চাপলে Drive-এ সেভ হবে')}</div></div>
+      <button class="tbtn" style="color:var(--muted)" onclick="driveSignOut()">বিচ্ছিন্ন</button></div>
+    <div class="drive-btns">
+      <button class="btn btn-blue btn-flex ${driveBusy === 'আপলোড হচ্ছে...' ? 'syncing' : ''}" onclick="driveUpload()" ${driveBusy ? 'disabled' : ''}>${I.upload} ${driveBusy === 'আপলোড হচ্ছে...' ? driveBusy : 'আপলোড'}</button>
+      <button class="btn btn-soft btn-flex ${driveBusy === 'লোড হচ্ছে...' ? 'syncing' : ''}" onclick="driveDownload()" ${driveBusy ? 'disabled' : ''}>${I.download} ${driveBusy === 'লোড হচ্ছে...' ? driveBusy : 'ডাউনলোড'}</button>
+    </div>`;
 }
 
 async function driveSignIn() {
-  if (clientIdMissing) { toast('⚠️ আগে Client ID বসান!', 3000); tab('drive'); return; }
-  if (!gsiReady()) { toast(driveErrMsg({ code: 'gsi' }), 2500); return; }
+  if (clientIdMissing) { toast('⚠️ আগে Client ID বসান!', { dur: 3000 }); return; }
+  if (!gsiReady()) { toast(driveErrMsg({ code: 'gsi' }), { dur: 2500 }); return; }
   if (driveBusy) return;
-  driveBusy = true;
+  driveBusy = 'সংযোগ হচ্ছে...'; refreshDrive();
   try {
     await requestToken();
     driveFileId = null;
-    updateDriveUI(true);
     toast('✅ Google Drive সংযুক্ত!');
-    document.getElementById('driveUser').textContent = '✅ সংযুক্ত — ফাইল খোঁজা হচ্ছে...';
     const id = await findFile();
-    document.getElementById('driveUser').textContent =
-      id ? '✅ সংযুক্ত — ফাইল পাওয়া গেছে' : '✅ সংযুক্ত — প্রথম আপলোডে ফাইল তৈরি হবে';
+    driveNote = id ? 'Drive-এ আগের ব্যাকআপ পাওয়া গেছে' : 'প্রথম আপলোডে Drive-এ ফাইল তৈরি হবে';
   } catch (e) {
-    if (driveToken) document.getElementById('driveUser').textContent = '✅ সংযুক্ত';
-    toast(driveErrMsg(e), 3000);
+    toast(driveErrMsg(e), { dur: 3000 });
   } finally {
-    driveBusy = false;
-    updateDriveUI(!!driveToken);
+    driveBusy = ''; refreshDrive();
   }
 }
-
 function driveSignOut() {
   if (driveToken && gsiReady()) google.accounts.oauth2.revoke(driveToken, () => {});
-  driveToken = null; driveFileId = null; tokenExpiry = 0;
-  updateDriveUI(false);
+  driveToken = null; driveFileId = null; tokenExpiry = 0; driveNote = '';
+  refreshDrive();
   toast('সংযোগ বিচ্ছিন্ন হয়েছে');
 }
-
-function updateDriveUI(connected) {
-  const btn = document.getElementById('driveBtn');
-  const txt = document.getElementById('driveBtnTxt');
-  btn.className = 'drive-btn' + (connected ? ' connected' : '');
-  txt.textContent = connected ? 'Drive সংযুক্ত' : 'Drive সংযোগ';
-  document.getElementById('driveNotConn').classList.toggle('hidden', connected);
-  document.getElementById('driveConn').classList.toggle('hidden', !connected);
-}
-
 async function driveUpload() {
   if (!driveToken) { driveSignIn(); return; }
   if (driveBusy) return;
-  driveBusy = true;
-  setDriveSyncing('আপলোড হচ্ছে...');
+  driveBusy = 'আপলোড হচ্ছে...'; refreshDrive();
   try {
-    // ensureToken আগে ডাকা হচ্ছে যাতে দরকার হলে পপআপ ক্লিকের সাথেই খোলে
     await ensureToken();
     let id = await findFile();
     if (!id) {
       const r = await driveFetch(DRIVE_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] })
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] }),
       });
       id = driveFileId = (await r.json()).id;
     }
     try {
       await driveFetch(`${DRIVE_UPLOAD}/${id}?uploadType=media`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ persons, exportTime: new Date().toISOString() })
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: backupPayload(),
       });
-    } catch (e) {
-      if (e.status === 404) driveFileId = null; // ফাইল মুছে গেলে পরের বার নতুন তৈরি হবে
-      throw e;
-    }
-    document.getElementById('driveLastSync').textContent = 'শেষ আপলোড: ' + syncTimeStr();
-    document.getElementById('driveUser').textContent = '✅ সংযুক্ত — ফাইল পাওয়া গেছে';
+    } catch (e) { if (e.status === 404) driveFileId = null; throw e; }
+    markBackup();
+    driveNote = 'শেষ আপলোড: ' + fmtTime(Date.now());
     toast('✅ Drive-এ আপলোড হয়েছে!');
   } catch (e) {
-    toast(driveErrMsg(e), 3000);
+    toast(driveErrMsg(e), { dur: 3000 });
   } finally {
-    driveBusy = false;
-    updateDriveUI(!!driveToken);
+    driveBusy = ''; refreshDrive();
   }
 }
-
 async function driveDownload() {
   if (!driveToken) { driveSignIn(); return; }
   if (driveBusy) return;
-  driveBusy = true;
-  setDriveSyncing('লোড হচ্ছে...');
+  driveBusy = 'লোড হচ্ছে...'; refreshDrive();
+  let clean = null;
   try {
     await ensureToken();
     const id = await findFile();
-    if (!id) { toast('⚠️ Drive-এ কোনো ডেটা নেই', 2500); return; }
+    if (!id) { toast('⚠️ Drive-এ কোনো ব্যাকআপ নেই', { dur: 2500 }); return; }
     let data;
-    try {
-      data = await (await driveFetch(`${DRIVE_API}/${id}?alt=media`)).json();
-    } catch (e) {
-      if (e.status === 404) driveFileId = null;
-      throw e.code ? e : new DriveError('bad-data');
-    }
-    const clean = normalizePersons(data && data.persons);
+    try { data = await (await driveFetch(`${DRIVE_API}/${id}?alt=media`)).json(); }
+    catch (e) { if (e.status === 404) driveFileId = null; throw e.code ? e : new DriveError('bad-data'); }
+    clean = normalizeData(data);
     if (!clean) throw new DriveError('bad-data');
-    if (!confirm('Drive-এর ডেটা দিয়ে বর্তমান ডেটা রিপ্লেস হবে। নিশ্চিত?')) return;
-    persons = clean;
-    if (sel && !own(persons, sel)) sel = null;
-    save(); updateBal(); renderChips(); renderTx(); renderHistory();
-    document.getElementById('driveLastSync').textContent = 'শেষ ডাউনলোড: ' + syncTimeStr();
-    toast('✅ Drive থেকে লোড হয়েছে!');
   } catch (e) {
-    toast(driveErrMsg(e), 3000);
+    toast(driveErrMsg(e), { dur: 3000 });
   } finally {
-    driveBusy = false;
-    updateDriveUI(!!driveToken);
+    driveBusy = ''; refreshDrive();
+  }
+  if (clean && await replaceData(clean, 'Drive-এর ব্যাকআপ')) {
+    driveNote = 'শেষ ডাউনলোড: ' + fmtTime(Date.now());
+    refreshDrive();
+    toast('✅ Drive থেকে হিসাব ফেরত আনা হয়েছে!');
   }
 }
 
@@ -882,15 +1626,16 @@ async function driveDownload() {
 //  SERVICE WORKER (PWA)
 // ══════════════════════════════════════
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
 // ══════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════
-document.getElementById('clientIdWarn').classList.toggle('hidden', !clientIdMissing);
-renderChips();
-updateBal();
+applyTheme();
+history.replaceState({ inApp: false }, '');
+render();
+if (!prefs.onboarded) showOnboarding();
 </script>
 </body>
 </html>
