@@ -1,5 +1,5 @@
 // ক্যাশের নাম বদলালে পুরনো ক্যাশ মুছে যায় — বড় পরিবর্তনে এটা বাড়ান
-const CACHE = 'hisab-v3';
+const CACHE = 'hisab-v4';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
