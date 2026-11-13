@@ -413,6 +413,20 @@ svg { display:block; flex-shrink:0; }
 .trow .ri-t { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tbtn { padding:7px 10px; border-radius:10px; font-size:.8rem; font-weight:600; }
 
+/* ═════════ PRINT ═════════ */
+#printArea { display:none; }
+@media print {
+  body { max-width:none; background:#fff; color:#000; }
+  body > *:not(#printArea) { display:none !important; }
+  #printArea { display:block; padding:8px; font-size:12pt; }
+  #printArea h1 { font-size:16pt; margin-bottom:4px; }
+  #printArea p { margin-bottom:12px; color:#333; }
+  #printArea table { width:100%; border-collapse:collapse; }
+  #printArea th, #printArea td { border:1px solid #999; padding:6px 8px; text-align:left; }
+  #printArea .r { text-align:right; white-space:nowrap; }
+  #printArea thead th, #printArea tfoot th { background:#eee; }
+}
+
 /* ═════════ ONBOARDING ═════════ */
 .onb { position: fixed; inset:0; z-index: 300; background: var(--bg); display:flex; flex-direction:column; max-width:520px; margin:0 auto; padding: calc(16px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom)); }
 .onb-skip { align-self:flex-end; color: var(--muted); font-size:.9rem; padding:6px 8px; }
@@ -429,6 +443,7 @@ svg { display:block; flex-shrink:0; }
 
 <div id="app"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="printArea"></div>
 <input type="file" id="fileImport" accept="application/json,.json" class="hidden">
 
 <!-- Google Identity Services -->
@@ -447,7 +462,7 @@ const LS_PREFS = 'hk_prefs';
 const LS_SNAPSHOT = 'hk_before_restore';
 const TRASH_DAYS = 30;
 const DAY = 86400000;
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 
 // ══════════════════════════════════════
 //  ICONS
@@ -615,7 +630,8 @@ function loadData() {
 }
 
 function loadPrefs() {
-  const def = { theme: 'dark', onboarded: false, lastBackup: 0, snoozeBackup: 0, tipTx: false, sort: 'recent' };
+  const def = { theme: 'dark', onboarded: false, lastBackup: 0, snoozeBackup: 0, tipTx: false, sort: 'recent',
+    driveConnected: false, driveEmail: '', autoBackup: true, lastDriveBackup: 0, lastChange: 0 };
   try { return { ...def, ...(JSON.parse(localStorage.getItem(LS_PREFS) || '{}') || {}) }; }
   catch (e) { return def; }
 }
@@ -625,7 +641,11 @@ let prefs = loadPrefs();
 const ui = { q: '', filter: 'all', hfilter: 'all' };
 
 function save() {
-  try { localStorage.setItem(LS_DATA, JSON.stringify({ version: 2, people: db.people, trash: db.trash })); return true; }
+  try {
+    localStorage.setItem(LS_DATA, JSON.stringify({ version: 2, people: db.people, trash: db.trash }));
+    prefs.lastChange = Date.now(); savePrefs();
+    return true;
+  }
   catch (e) { toast('⚠️ ফোনে জায়গা নেই — সেভ করা যায়নি। কিছু ছবি সরিয়ে দেখুন।', { dur: 4500 }); return false; }
 }
 function savePrefs() { try { localStorage.setItem(LS_PREFS, JSON.stringify(prefs)); } catch (e) {} }
@@ -687,6 +707,9 @@ function render() {
 //  HOME
 // ══════════════════════════════════════
 function backupBanner() {
+  if (ui.autoFailed) return `<div class="banner"><span class="b-ico">${I.alert}</span>
+    <span class="b-txt">এই সপ্তাহের স্বয়ংক্রিয় Drive ব্যাকআপ হয়নি।</span>
+    <button class="b-btn" onclick="driveUpload()">এখনই ব্যাকআপ</button></div>`;
   const hasData = db.people.some(p => p.txns.length);
   const old = Date.now() - prefs.lastBackup > 7 * DAY;
   if (!hasData || !old || Date.now() < prefs.snoozeBackup) return '';
@@ -1058,10 +1081,12 @@ function personMenu(id) {
     <div class="alist">
       <button class="aitem" data-a="edit"><span class="ic">${I.edit}</span>খাতার তথ্য এডিট করুন</button>
       <button class="aitem" data-a="share"><span class="ic">${I.share}</span>হিসাব শেয়ার করুন</button>
+      <button class="aitem" data-a="print"><span class="ic">${I.file}</span>প্রিন্ট / PDF বানান</button>
       <button class="aitem danger" data-a="del"><span class="ic">${I.trash}</span>পুরো খাতা মুছুন</button>
     </div>`);
   el.querySelector('[data-a=edit]').onclick = () => closeModal(() => personSheet(id));
   el.querySelector('[data-a=share]').onclick = () => closeModal(() => shareStatement(id));
+  el.querySelector('[data-a=print]').onclick = () => closeModal(() => setTimeout(() => printStatement(id), 250));
   el.querySelector('[data-a=del]').onclick = () => closeModal(() => deletePerson(id));
 }
 
@@ -1256,6 +1281,9 @@ function renderSettings() {
       <div class="group-title">ব্যাকআপ — ফোন হারালেও হিসাব থাকবে</div>
       <div class="gcard">
         <div class="drive-box">${driveHTML()}</div>
+        ${prefs.driveConnected ? `<button class="row-item" onclick="toggleAuto()"><span class="ri-ic c-blue">${I.restore}</span>
+          <div class="ri-b"><div class="ri-t">স্বয়ংক্রিয় সাপ্তাহিক ব্যাকআপ</div><div class="ri-s">প্রতি ৭ দিনে অ্যাপ খুললে নিজে থেকেই Drive-এ ব্যাকআপ হবে</div></div>
+          <span class="switch ${prefs.autoBackup ? 'on' : ''}"></span></button>` : ''}
         <button class="row-item" onclick="exportFile()"><span class="ri-ic c-green">${I.download}</span>
           <div class="ri-b"><div class="ri-t">ফাইলে ব্যাকআপ নিন</div><div class="ri-s">ফোনে একটা ব্যাকআপ ফাইল সেভ হবে</div></div></button>
         <button class="row-item" onclick="$('#fileImport').click()"><span class="ri-ic c-gold">${I.upload}</span>
@@ -1391,9 +1419,11 @@ const HELP = [
     <li>ফোন নম্বর দেওয়া থাকলে <b>কল</b> ও <b>মেসেজ</b> বাটন দেখাবে — মেসেজে ব্যালেন্সের কথা আগে থেকেই লেখা থাকবে।</li></ul>`],
   [I.cloud, 'c-blue', 'ব্যাকআপ — খুবই জরুরি!', `
     <p>সব হিসাব শুধু এই ফোনেই থাকে। ফোন হারালে, নষ্ট হলে বা ব্রাউজারের ডেটা মুছলে হিসাবও হারাবে।</p>
-    <ul><li><b>Google Drive:</b> সেটিংস → Drive সংযোগ → <b>আপলোড</b>। নতুন ফোনে একই Google অ্যাকাউন্টে ঢুকে <b>ডাউনলোড</b>।</li>
+    <ul><li><b>Google Drive:</b> সেটিংস → <b>Google Drive সংযোগ করুন</b>। একবার সংযোগ করলেই হবে — এরপর <b>প্রতি ৭ দিনে</b> অ্যাপ খুললে নিজে থেকেই ব্যাকআপ হবে।</li>
+    <li>Drive-এ সবসময় <b>একটাই ব্যাকআপ ফাইল</b> থাকে: নতুন ব্যাকআপ সেভ হলে পুরনোটা নিজে থেকেই মুছে যায়।</li>
+    <li>নতুন ফোনে একই Google অ্যাকাউন্ট সংযোগ করলে অ্যাপ নিজেই হিসাব <b>ফেরত আনতে</b> চাইবে।</li>
     <li><b>ফাইল:</b> সেটিংস → “ফাইলে ব্যাকআপ নিন”। ফাইলটা নিজের কাছে বা ইমেইলে রেখে দিন।</li>
-    <li>সপ্তাহে অন্তত একবার ব্যাকআপ নিন — না নিলে অ্যাপ মনে করিয়ে দেবে।</li></ul>`],
+    <li>Drive সংযোগ না করলে সপ্তাহে অন্তত একবার ফাইলে ব্যাকআপ নিন — না নিলে অ্যাপ মনে করিয়ে দেবে।</li></ul>`],
   [I.download, 'c-green', 'ফোনে অ্যাপের মতো ইনস্টল', `
     <ul><li>Chrome-এ অ্যাপটা খুলে উপরের <b>⋮ মেনু → “Add to Home screen” / “Install app”</b> চাপুন।</li>
     <li>এরপর ইন্টারনেট ছাড়াও চলবে (শুধু Drive ব্যাকআপে নেট লাগবে)।</li></ul>`],
@@ -1448,16 +1478,25 @@ function showOnboarding() {
 // ══════════════════════════════════════
 const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+const DRIVE_ABOUT = 'https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)';
+const LS_TOKEN = 'hk_drive_token';
+const AUTO_DAYS = 7;
 const clientIdMissing = !CLIENT_ID || CLIENT_ID.startsWith('YOUR_CLIENT_ID');
 
 let driveToken = null;
-let driveFileId = null;
 let tokenClient = null;
 let tokenExpiry = 0;
 let pendingToken = null;
-let fileLookup = null;
 let driveBusy = '';
 let driveNote = '';
+let autoTried = false;
+let autoArmed = false;
+
+// আগের টোকেন এখনো চালু থাকলে (প্রায় ১ ঘণ্টা) সেটাই ব্যবহার হবে
+try {
+  const saved = JSON.parse(localStorage.getItem(LS_TOKEN) || 'null');
+  if (saved && typeof saved.t === 'string' && saved.exp > Date.now()) { driveToken = saved.t; tokenExpiry = saved.exp; }
+} catch (e) {}
 
 class DriveError extends Error {
   constructor(code, status) { super(code); this.code = code; this.status = status; }
@@ -1476,6 +1515,7 @@ function getTokenClient() {
         if (resp.error) { p.reject(new DriveError('auth')); return; }
         driveToken = resp.access_token;
         tokenExpiry = Date.now() + (Number(resp.expires_in) || 3600) * 1000 - 60000;
+        try { localStorage.setItem(LS_TOKEN, JSON.stringify({ t: driveToken, exp: tokenExpiry })); } catch (e) {}
         p.resolve(driveToken);
       },
       error_callback: () => { const p = pendingToken; pendingToken = null; if (p) p.reject(new DriveError('auth')); },
@@ -1489,33 +1529,59 @@ function requestToken(prompt) {
   if (pendingToken) pendingToken.reject(new DriveError('auth'));
   return new Promise((resolve, reject) => {
     pendingToken = { resolve, reject };
-    c.requestAccessToken(prompt === undefined ? {} : { prompt });
+    const opts = {};
+    if (prompt !== undefined) opts.prompt = prompt;
+    if (prefs.driveEmail) opts.login_hint = prefs.driveEmail;
+    c.requestAccessToken(opts);
   });
 }
+// মেয়াদ শেষ হলে নতুন টোকেন নেয় — একবার অনুমতি দেওয়া থাকলে আর কিছু জিজ্ঞেস করে না
 function ensureToken() {
   if (driveToken && Date.now() < tokenExpiry) return Promise.resolve(driveToken);
   return requestToken('');
+}
+function dropToken() {
+  driveToken = null; tokenExpiry = 0;
+  try { localStorage.removeItem(LS_TOKEN); } catch (e) {}
 }
 async function driveFetch(url, opts = {}) {
   const token = await ensureToken();
   let res;
   try { res = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + token } }); }
   catch (e) { throw new DriveError('network'); }
-  if (res.status === 401) { tokenExpiry = 0; throw new DriveError('auth', 401); }
+  if (res.status === 401) { dropToken(); throw new DriveError('auth', 401); }
   if (!res.ok) throw new DriveError('http', res.status);
   return res;
 }
-function findFile() {
-  if (driveFileId) return Promise.resolve(driveFileId);
-  if (!fileLookup) {
-    const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
-    fileLookup = driveFetch(`${DRIVE_API}?spaces=appDataFolder&fields=files(id)&q=${q}`)
-      .then(r => r.json())
-      .then(d => (driveFileId = d.files && d.files.length ? d.files[0].id : null))
-      .finally(() => { fileLookup = null; });
-  }
-  return fileLookup;
+
+// Drive-এর সব ব্যাকআপ ফাইল, নতুনটা আগে
+async function listBackups() {
+  const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+  const r = await driveFetch(`${DRIVE_API}?spaces=appDataFolder&pageSize=100&orderBy=modifiedTime%20desc&fields=files(id,modifiedTime)&q=${q}`);
+  const d = await r.json();
+  return Array.isArray(d.files) ? d.files : [];
 }
+
+// নতুন ব্যাকআপ ফাইল তৈরি করে; সেটা সফল হলে তবেই পুরনোগুলো মুছে দেয়
+async function driveSaveBackup() {
+  const b = 'hk' + uid();
+  const body = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
+    JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] }) +
+    `\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${backupPayload()}\r\n--${b}--`;
+  const r = await driveFetch(`${DRIVE_UPLOAD}?uploadType=multipart&fields=id`, {
+    method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${b}` }, body,
+  });
+  const newId = (await r.json()).id;
+  if (!newId) throw new DriveError('http');
+  try {
+    const old = (await listBackups()).filter(f => f.id !== newId);
+    await Promise.all(old.map(f => driveFetch(`${DRIVE_API}/${f.id}`, { method: 'DELETE' }).catch(() => {})));
+  } catch (e) {}
+  prefs.lastDriveBackup = Date.now();
+  ui.autoFailed = false;
+  markBackup();
+}
+
 function driveErrMsg(e) {
   const code = e && e.code;
   if (code === 'gsi') return '⏳ Google লোড হচ্ছে, একটু পরে আবার চেষ্টা করুন';
@@ -1525,23 +1591,26 @@ function driveErrMsg(e) {
   return '❌ Drive-এ সমস্যা হয়েছে' + (e && e.status ? ` (${e.status})` : '');
 }
 function refreshDrive() { if (route().page === 'settings') render(); }
+function setBusy(v) { driveBusy = v; refreshDrive(); }
 
 function driveHTML() {
   if (clientIdMissing) {
     return `<div class="drive-st"><span class="ri-ic c-gold">${I.cloud}</span><div class="ri-b"><div class="ri-t">Google Drive</div>
       <div class="ri-s">index.html-এর google-client-id meta ট্যাগে Client ID বসান</div></div></div>`;
   }
-  if (!driveToken) {
+  if (!prefs.driveConnected) {
     return `<div class="drive-st"><span class="ri-ic c-blue">${I.cloud}</span><div class="ri-b"><div class="ri-t">Google Drive</div>
-      <div class="ri-s">সংযোগ করলে হিসাব অনলাইনে নিরাপদে থাকবে</div></div></div>
+      <div class="ri-s">একবার সংযোগ করলে প্রতি সপ্তাহে নিজে থেকেই ব্যাকআপ হবে</div></div></div>
       <button class="btn btn-blue btn-full ${driveBusy ? 'syncing' : ''}" onclick="driveSignIn()" ${driveBusy ? 'disabled' : ''}>${I.cloud} ${driveBusy || 'Google Drive সংযোগ করুন'}</button>`;
   }
+  const last = prefs.lastDriveBackup ? 'শেষ Drive ব্যাকআপ: ' + relDay(prefs.lastDriveBackup) + ', ' + fmtTime(prefs.lastDriveBackup) : 'এখনো Drive-এ ব্যাকআপ হয়নি';
   return `<div class="drive-st"><span class="ri-ic c-green">${I.cloud}</span><div class="ri-b"><div class="ri-t">Google Drive সংযুক্ত ✅</div>
-      <div class="ri-s">${h(driveNote || 'আপলোড চাপলে Drive-এ সেভ হবে')}</div></div>
+      ${prefs.driveEmail ? `<div class="ri-s">${h(prefs.driveEmail)}</div>` : ''}
+      <div class="ri-s">${h(driveNote || last)}</div></div>
       <button class="tbtn" style="color:var(--muted)" onclick="driveSignOut()">বিচ্ছিন্ন</button></div>
     <div class="drive-btns">
-      <button class="btn btn-blue btn-flex ${driveBusy === 'আপলোড হচ্ছে...' ? 'syncing' : ''}" onclick="driveUpload()" ${driveBusy ? 'disabled' : ''}>${I.upload} ${driveBusy === 'আপলোড হচ্ছে...' ? driveBusy : 'আপলোড'}</button>
-      <button class="btn btn-soft btn-flex ${driveBusy === 'লোড হচ্ছে...' ? 'syncing' : ''}" onclick="driveDownload()" ${driveBusy ? 'disabled' : ''}>${I.download} ${driveBusy === 'লোড হচ্ছে...' ? driveBusy : 'ডাউনলোড'}</button>
+      <button class="btn btn-blue btn-flex ${driveBusy === 'আপলোড হচ্ছে...' ? 'syncing' : ''}" onclick="driveUpload()" ${driveBusy ? 'disabled' : ''}>${I.upload} ${driveBusy === 'আপলোড হচ্ছে...' ? driveBusy : 'এখনই ব্যাকআপ'}</button>
+      <button class="btn btn-soft btn-flex ${driveBusy === 'লোড হচ্ছে...' ? 'syncing' : ''}" onclick="driveDownload()" ${driveBusy ? 'disabled' : ''}>${I.download} ${driveBusy === 'লোড হচ্ছে...' ? driveBusy : 'ফেরত আনুন'}</button>
     </div>`;
 }
 
@@ -1549,77 +1618,152 @@ async function driveSignIn() {
   if (clientIdMissing) { toast('⚠️ আগে Client ID বসান!', { dur: 3000 }); return; }
   if (!gsiReady()) { toast(driveErrMsg({ code: 'gsi' }), { dur: 2500 }); return; }
   if (driveBusy) return;
-  driveBusy = 'সংযোগ হচ্ছে...'; refreshDrive();
+  setBusy('সংযোগ হচ্ছে...');
+  let offerRestore = false;
   try {
     await requestToken();
-    driveFileId = null;
-    toast('✅ Google Drive সংযুক্ত!');
-    const id = await findFile();
-    driveNote = id ? 'Drive-এ আগের ব্যাকআপ পাওয়া গেছে' : 'প্রথম আপলোডে Drive-এ ফাইল তৈরি হবে';
+    prefs.driveConnected = true;
+    savePrefs();
+    try {
+      const u = (await (await driveFetch(DRIVE_ABOUT)).json()).user;
+      if (u && typeof u.emailAddress === 'string') { prefs.driveEmail = u.emailAddress.slice(0, 120); savePrefs(); }
+    } catch (e) {}
+    const files = await listBackups();
+    if (!files.length) {
+      if (db.people.length) { await driveSaveBackup(); toast('✅ সংযুক্ত — প্রথম ব্যাকআপ Drive-এ সেভ হয়েছে'); }
+      else { prefs.lastDriveBackup = Date.now(); savePrefs(); toast('✅ Google Drive সংযুক্ত!'); }
+    } else if (!db.people.length) {
+      offerRestore = true;
+    } else {
+      // Drive-এ আগের ব্যাকআপ আছে, ফোনেও হিসাব আছে — কোনটা থাকবে সেটা ব্যবহারকারী ঠিক করবেন
+      driveNote = 'Drive-এ আগের একটা ব্যাকআপ আছে। এই ফোনের হিসাব রাখতে "এখনই ব্যাকআপ", Drive-এরটা আনতে "ফেরত আনুন" চাপুন।';
+      toast('✅ Google Drive সংযুক্ত!');
+    }
   } catch (e) {
     toast(driveErrMsg(e), { dur: 3000 });
   } finally {
-    driveBusy = ''; refreshDrive();
+    setBusy('');
   }
+  if (offerRestore) driveDownload();
 }
+
 function driveSignOut() {
   if (driveToken && gsiReady()) google.accounts.oauth2.revoke(driveToken, () => {});
-  driveToken = null; driveFileId = null; tokenExpiry = 0; driveNote = '';
+  dropToken();
+  Object.assign(prefs, { driveConnected: false, driveEmail: '', lastDriveBackup: 0 });
+  savePrefs();
+  driveNote = ''; ui.autoFailed = false;
   refreshDrive();
   toast('সংযোগ বিচ্ছিন্ন হয়েছে');
 }
+
 async function driveUpload() {
-  if (!driveToken) { driveSignIn(); return; }
+  if (!prefs.driveConnected) { driveSignIn(); return; }
   if (driveBusy) return;
-  driveBusy = 'আপলোড হচ্ছে...'; refreshDrive();
+  const tokenReady = ensureToken();           // পপআপ লাগলে ক্লিকের সাথেই খুলবে
+  tokenReady.catch(() => {});
+  if (!db.people.length) {
+    const ok = await confirmDialog({ title: 'খালি হিসাব ব্যাকআপ করবেন?', msg: 'এই ফোনে কোনো খাতা নেই। ব্যাকআপ নিলে Drive-এর আগের ব্যাকআপ মুছে খালি হিসাব সেভ হবে।', ok: 'তবুও ব্যাকআপ', danger: true });
+    if (!ok) return;
+  }
+  setBusy('আপলোড হচ্ছে...');
   try {
-    await ensureToken();
-    let id = await findFile();
-    if (!id) {
-      const r = await driveFetch(DRIVE_API, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] }),
-      });
-      id = driveFileId = (await r.json()).id;
-    }
-    try {
-      await driveFetch(`${DRIVE_UPLOAD}/${id}?uploadType=media`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: backupPayload(),
-      });
-    } catch (e) { if (e.status === 404) driveFileId = null; throw e; }
-    markBackup();
-    driveNote = 'শেষ আপলোড: ' + fmtTime(Date.now());
-    toast('✅ Drive-এ আপলোড হয়েছে!');
+    await tokenReady;
+    await driveSaveBackup();
+    driveNote = '';
+    toast('✅ Drive-এ ব্যাকআপ হয়েছে!');
   } catch (e) {
     toast(driveErrMsg(e), { dur: 3000 });
   } finally {
-    driveBusy = ''; refreshDrive();
+    setBusy('');
+    if (route().page === 'home' && !modal) render();
   }
 }
+
 async function driveDownload() {
-  if (!driveToken) { driveSignIn(); return; }
+  if (!prefs.driveConnected) { driveSignIn(); return; }
   if (driveBusy) return;
-  driveBusy = 'লোড হচ্ছে...'; refreshDrive();
+  setBusy('লোড হচ্ছে...');
   let clean = null;
   try {
-    await ensureToken();
-    const id = await findFile();
-    if (!id) { toast('⚠️ Drive-এ কোনো ব্যাকআপ নেই', { dur: 2500 }); return; }
+    const files = await listBackups();
+    if (!files.length) { toast('⚠️ Drive-এ কোনো ব্যাকআপ নেই', { dur: 2500 }); return; }
     let data;
-    try { data = await (await driveFetch(`${DRIVE_API}/${id}?alt=media`)).json(); }
-    catch (e) { if (e.status === 404) driveFileId = null; throw e.code ? e : new DriveError('bad-data'); }
+    try { data = await (await driveFetch(`${DRIVE_API}/${files[0].id}?alt=media`)).json(); }
+    catch (e) { throw e.code ? e : new DriveError('bad-data'); }
     clean = normalizeData(data);
     if (!clean) throw new DriveError('bad-data');
   } catch (e) {
     toast(driveErrMsg(e), { dur: 3000 });
   } finally {
-    driveBusy = ''; refreshDrive();
+    setBusy('');
   }
   if (clean && await replaceData(clean, 'Drive-এর ব্যাকআপ')) {
-    driveNote = 'শেষ ডাউনলোড: ' + fmtTime(Date.now());
+    prefs.lastDriveBackup = Date.now(); savePrefs();
+    driveNote = '';
     refreshDrive();
     toast('✅ Drive থেকে হিসাব ফেরত আনা হয়েছে!');
   }
+}
+
+// ── স্বয়ংক্রিয় সাপ্তাহিক ব্যাকআপ ──
+// অ্যাপ খোলা থাকলে চলে: শেষ Drive ব্যাকআপের ৭ দিন পর, আর এর মধ্যে হিসাবে কিছু বদলালে।
+function autoDue() {
+  return prefs.driveConnected && prefs.autoBackup && !clientIdMissing && !autoTried
+    && prefs.lastDriveBackup > 0 && db.people.length > 0 && navigator.onLine !== false
+    && Date.now() - prefs.lastDriveBackup >= AUTO_DAYS * DAY
+    && prefs.lastChange > prefs.lastDriveBackup;
+}
+async function runAutoBackup() {
+  if (driveBusy || !autoDue()) return;
+  autoTried = true;
+  setBusy('আপলোড হচ্ছে...');
+  try {
+    await ensureToken();
+    await driveSaveBackup();
+    toast('☁️ সাপ্তাহিক ব্যাকআপ Drive-এ সেভ হয়েছে');
+  } catch (e) {
+    ui.autoFailed = true;
+  } finally {
+    setBusy('');
+    if (route().page === 'home' && !modal && !ui.q) render();
+  }
+}
+function scheduleAutoBackup() {
+  if (!autoDue()) return;
+  if (driveToken && Date.now() < tokenExpiry) { runAutoBackup(); return; }
+  // নতুন টোকেন নিতে Google একটা ছোট জানালা খোলে, যা শুধু ব্যবহারকারীর চাপের সাথেই খোলা যায়
+  if (autoArmed) return;
+  autoArmed = true;
+  document.addEventListener('click', () => {
+    autoArmed = false;
+    if (gsiReady()) runAutoBackup(); else scheduleAutoBackup();
+  }, { once: true, capture: true });
+}
+function toggleAuto() { prefs.autoBackup = !prefs.autoBackup; savePrefs(); render(); scheduleAutoBackup(); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { autoTried = false; scheduleAutoBackup(); } });
+
+// ══════════════════════════════════════
+//  PRINT / PDF
+// ══════════════════════════════════════
+function printStatement(id) {
+  const p = findPerson(id);
+  if (!p) return;
+  const s = pstats(p);
+  let run = 0;
+  const rows = [...p.txns].reverse().map(t => {
+    run = round2(run + (t.type === 'add' ? t.amount : -t.amount));
+    return `<tr><td>${fmtDate(t.ts)}</td><td>${h(t.note || '')}</td>
+      <td class="r">${t.type === 'add' ? '৳ ' + bn(t.amount) : ''}</td><td class="r">${t.type === 'sub' ? '৳ ' + bn(t.amount) : ''}</td>
+      <td class="r">${money(run)}</td></tr>`;
+  }).join('');
+  $('#printArea').innerHTML = `
+    <h1>হিসাব খাতা — ${h(p.name)}</h1>
+    <p>${p.phone ? 'ফোন: ' + h(p.phone) + ' · ' : ''}${p.note ? h(p.note) + ' · ' : ''}তারিখ: ${fmtDate(Date.now())}</p>
+    <table><thead><tr><th>তারিখ</th><th>বিবরণ</th><th class="r">যোগ</th><th class="r">বিয়োগ</th><th class="r">ব্যালেন্স</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5">কোনো লেনদেন নেই</td></tr>'}</tbody>
+    <tfoot><tr><th colspan="2">মোট</th><th class="r">৳ ${bn(s.tin)}</th><th class="r">৳ ${bn(s.tout)}</th><th class="r">${money(s.bal)}</th></tr></tfoot></table>`;
+  window.print();
 }
 
 // ══════════════════════════════════════
@@ -1636,6 +1780,7 @@ applyTheme();
 history.replaceState({ inApp: false }, '');
 render();
 if (!prefs.onboarded) showOnboarding();
+scheduleAutoBackup();
 </script>
 </body>
 </html>
